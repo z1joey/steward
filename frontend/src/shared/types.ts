@@ -37,3 +37,56 @@ export interface LoginResponse {
   token_type: string;
   user: { id: number; phone: string };
 }
+
+// —— Phase B · Ledger / Claims（与 backend schemas 对齐）——
+
+export interface RequestedBy {
+  id: number;
+  phone: string;
+}
+
+export interface ClaimView {
+  id: number;
+  date: string;
+  amount: string;
+  memo: string;
+  status: "pending" | "posted" | "rejected";
+  requested_by: RequestedBy;
+  decided_at: string | null;
+  ledger_entry_id: number | null;
+  version: number;
+}
+
+export interface LedgerRow {
+  row_type: "entry" | "claim_pending";
+  id: number;
+  date: string;
+  amount: string;
+  direction: "income" | "expense" | null;
+  memo: string;
+  source_type: "manual" | "claim" | "payroll" | "dividend" | "recurring" | null;
+  source_id: number | null;
+  is_reversal: boolean;
+  reversed_by_id: number | null;
+  claim_status: string | null;
+  version: number;
+  created_at: string | null;
+  requested_by: RequestedBy | null;
+}
+
+export interface LedgerList {
+  items: LedgerRow[];
+  total: number;
+}
+
+export interface EntryCreateResponse {
+  kind: "entry" | "claim";
+  entry: LedgerRow | null;
+  claim: ClaimView | null;
+}
+
+export interface ReversalResponse {
+  entry: LedgerRow;
+  original: LedgerRow;
+  public_txn: { id: number; balance_after: string } | null;
+}
