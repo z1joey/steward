@@ -23,7 +23,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
+      # alembic upgrade 用；conftest.py 会以 STEWARDS_TEST_DATABASE_URL 覆盖，
+      # pytest 连接串必须经后者传入（缺省为无凭据 localhost，CI 会挂）。
       STEWARDS_DATABASE_URL: postgresql+psycopg://steward:steward@localhost:5432/steward_test
+      STEWARDS_TEST_DATABASE_URL: postgresql+psycopg://steward:steward@localhost:5432/steward_test
     defaults:
       run:
         working-directory: backend
