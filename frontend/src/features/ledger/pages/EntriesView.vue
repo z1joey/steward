@@ -9,6 +9,7 @@ import {
 import type { LedgerFilter } from "@/features/ledger/stores/ledger";
 import RecordEntryModal from "@/features/ledger/components/RecordEntryModal.vue";
 import ReverseModal from "@/features/ledger/components/ReverseModal.vue";
+import ConfirmButton from "@/shared/components/ConfirmButton.vue";
 import { useRole } from "@/app/composables/useRole";
 import { COPY } from "@/shared/copy";
 import { SOURCE_TYPE_LABELS } from "@/shared/enums";

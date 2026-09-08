@@ -28,7 +28,8 @@ const memo = ref("");
 const needsReimbursement = ref(false);
 
 async function submit(): Promise<void> {
-  const value = amount.value.trim();
+  // v-model 在 number 输入上返回 number；统一转字符串再校验
+  const value = String(amount.value ?? "").trim();
   if (!value || Number(value) <= 0) return;
   await api.post("/ledger/entries", {
     date: date.value,
