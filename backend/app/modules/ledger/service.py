@@ -1,10 +1,11 @@
 from datetime import date
-from decimal import Decimal
 
+from sqlalchemy import exists, update
 from sqlalchemy.orm import Session
 
 from app.core.deps import StoreContext
-from app.enums import ClaimStatus, Direction, SourceType
+from app.core.errors import BusinessError, Conflict, NotFound, VersionConflict
+from app.enums import ClaimStatus, Direction, SourceType, TxnDirection
 from app.modules.claims.models import ExpenseClaim
 from app.modules.auth.models import User
 from app.modules.ledger.models import LedgerEntry
@@ -16,8 +17,12 @@ from app.modules.ledger.schemas import (
     LedgerListOut,
     LedgerRowOut,
     RequestedByOut,
+    ReversalPublicTxnOut,
+    ReverseEntryIn,
+    ReverseEntryOut,
 )
-from app.posting.service import EntryDraft, post
+from app.modules.public_account.models import PublicAccountTxn
+from app.posting.service import EntryDraft, PublicTxnDraft, post
 
 
 def entry_view(db: Session, entry: LedgerEntry) -> EntryView:
@@ -191,3 +196,92 @@ def list_entries(
         for e in entries
     )
     return LedgerListOut(items=rows, total=total_entries + total_pending)
+
+
+def _opposite(direction: str) -> Direction:
+    return Direction.income if direction == Direction.expense.value else Direction.expense
+
+
+def _txn_opposite(entry_direction: str) -> TxnDirection:
+    # 原分录 expense→配对 out；反向 income→配对 in（反之亦然）
+    return TxnDirection.inn if entry_direction == Direction.expense.value else TxnDirection.out
+
+
+def reverse_entry(
+    db: Session, ctx: StoreContext, entry_id: int, payload: ReverseEntryIn
+) -> ReverseEntryOut:
+    """冲正（B-specs §2.6，AC-LED-08）：
+
+    FOR UPDATE 原行 → one-shot 占位（不改金额/内容）→ post(反向, 配对 txn if 原有)
+    → 回填 reversed_by_id；被冲正行拒冲正（422）[C]；manager only。
+    """
+    orig = (
+        db.query(LedgerEntry)
+        .filter(LedgerEntry.id == entry_id, LedgerEntry.store_id == ctx.store.id)
+        .with_for_update()
+        .one_or_none()
+    )
+    if orig is None:
+        raise NotFound()          # 不存在 / 跨店 404
+    if orig.reverses_entry_id is not None:
+        raise BusinessError("cannot_reverse_reversal")   # 反向行不可再冲正 [C]
+
+    placeholder = db.execute(
+        update(LedgerEntry)
+        .where(
+            LedgerEntry.id == orig.id,
+            LedgerEntry.reversed_by_id.is_(None),   # one-shot 占位
+            LedgerEntry.version == payload.version,
+        )
+        .values(version=LedgerEntry.version + 1)
+    )
+    if placeholder.rowcount != 1:
+        if orig.reversed_by_id is not None:
+            raise Conflict("already_reversed")
+        raise VersionConflict()
+
+    had_txn = db.query(
+        exists().where(
+            PublicAccountTxn.ledger_entry_id == orig.id,
+            PublicAccountTxn.store_id == ctx.store.id,
+        )
+    ).scalar()
+
+    memo = f"冲正：{orig.memo}"
+    if payload.reason:
+        memo = f"{memo}（{payload.reason}）"
+    memo = memo[:500]
+
+    result = post(
+        db,
+        ctx,
+        EntryDraft(
+            entry_date=date.today(),   # [C]
+            amount=orig.amount,
+            direction=_opposite(orig.direction),
+            memo=memo,
+            source_type=SourceType(orig.source_type),   # 继承原 source_type [C]
+            source_id=orig.source_id,
+            reverses_entry_id=orig.id,
+        ),
+        PublicTxnDraft(
+            direction=_txn_opposite(orig.direction),
+            require_sufficient_balance=False,
+        )
+        if had_txn
+        else None,   # 配对公账（Locked：原有公账流水才配对反向）
+    )
+    orig.reversed_by_id = result.entry_id
+    db.commit()
+
+    reversal = db.get(LedgerEntry, result.entry_id)
+    txn_out = (
+        ReversalPublicTxnOut(id=result.txn_id, balance_after=result.new_balance)
+        if result.txn_id is not None
+        else None
+    )
+    return ReverseEntryOut(
+        entry=entry_view(db, reversal),
+        original=entry_view(db, db.get(LedgerEntry, orig.id)),
+        public_txn=txn_out,
+    )

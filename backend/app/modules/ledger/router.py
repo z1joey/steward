@@ -2,9 +2,16 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import StoreContext, require_store_membership
-from app.modules.ledger.schemas import EntryCreateIn, EntryCreateOut, LedgerListOut
-from app.modules.ledger.service import create_entry, list_entries
+from app.core.deps import StoreContext, require_role, require_store_membership
+from app.enums import Role
+from app.modules.ledger.schemas import (
+    EntryCreateIn,
+    EntryCreateOut,
+    LedgerListOut,
+    ReverseEntryIn,
+    ReverseEntryOut,
+)
+from app.modules.ledger.service import create_entry, list_entries, reverse_entry
 
 router = APIRouter()
 
@@ -28,3 +35,15 @@ def create_entry_route(
     db: Session = Depends(get_db),
 ) -> EntryCreateOut:
     return create_entry(db, ctx, payload)
+
+
+@router.post(
+    "/ledger/entries/{entry_id}/reverse", status_code=201, response_model=ReverseEntryOut
+)
+def reverse_entry_route(
+    entry_id: int,
+    payload: ReverseEntryIn,
+    ctx: StoreContext = Depends(require_role(Role.manager)),   # Deny：ledger.reverse（AC-LED-08）
+    db: Session = Depends(get_db),
+) -> ReverseEntryOut:
+    return reverse_entry(db, ctx, entry_id, payload)

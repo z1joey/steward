@@ -76,3 +76,21 @@ class LedgerRowOut(BaseModel):
 class LedgerListOut(BaseModel):
     items: list[LedgerRowOut]
     total: int
+
+
+class ReverseEntryIn(BaseModel):
+    """冲正（reason 是否必填 [Open O-09]，Convention 可选）。"""
+
+    version: int
+    reason: str = Field(default="", max_length=500)
+
+
+class ReversalPublicTxnOut(BaseModel):
+    id: int
+    balance_after: Decimal | None = None
+
+
+class ReverseEntryOut(BaseModel):
+    entry: EntryView          # 反向分录
+    original: EntryView       # 原分录（reversed_by_id 已回填）
+    public_txn: ReversalPublicTxnOut | None = None
