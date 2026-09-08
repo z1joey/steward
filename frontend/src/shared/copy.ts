@@ -86,6 +86,17 @@ export const COPY = {
   addSegment: "新增班次",
   hoursUnit: "h",
 
+  // 设置 · 本店成员（TE-03）
+  memberPhone: "手机号",
+  memberRole: "角色",
+  memberSince: "加入时间",
+  pendingSection: "待接受",
+  transferTo: "转让给",
+  transferConfirmTitle: "确认转让管理者",
+  transferConfirmHint: "转让后你将变为店长，确认继续？",
+  alreadyMemberMsg: "该用户已是本店成员",
+  pendingExistsMsg: "已有待接受邀请",
+
   // 认证 / 引导
   login: "登录",
   register: "注册",

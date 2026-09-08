@@ -70,7 +70,7 @@ export const router = createRouter({
     },
     {
       path: "/employees/:id",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/employees/pages/EmployeeDetailView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "员工详情" },
     },
     {
