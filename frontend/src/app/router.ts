@@ -55,7 +55,7 @@ export const router = createRouter({
     },
     {
       path: "/ledger/stats",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/stats/pages/StatsView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "统计" },
     },
     {
