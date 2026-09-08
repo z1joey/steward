@@ -90,3 +90,55 @@ export interface ReversalResponse {
   original: LedgerRow;
   public_txn: { id: number; balance_after: string } | null;
 }
+
+// —— Phase C · Recurring / Stats / Dividend ——
+
+export type RecurringKind = "rent" | "utilities" | "wages";
+
+export interface RecurringOccurrence {
+  id: number;
+  period_month: string;
+  amount: string;
+  recurring_expense_id: number;
+}
+
+export interface RecurringItem {
+  id: number;
+  name: string;
+  kind: RecurringKind;
+  period: "month";
+  is_fixed: boolean;
+  fixed_amount: string | null;
+  active: boolean;
+  version: number;
+  created_at: string;
+  current_month_occurrence: RecurringOccurrence | null;
+}
+
+export interface RecentTxn {
+  id: number;
+  amount: string;
+  direction: "in" | "out";
+  source_type: string;
+  balance_after: string;
+  created_at: string;
+  memo: string;
+}
+
+export interface LedgerStats {
+  month: string;
+  income: string;
+  expense: string;
+  profit_rate: number | null;
+  public: {
+    balance: string;
+    version: number;
+    recent_txns: RecentTxn[];
+  };
+}
+
+export interface DividendConfirmResponse {
+  run: { id: number; amount: string; confirmed_at: string };
+  entry: LedgerRow;
+  public: { balance: string; version: number };
+}
