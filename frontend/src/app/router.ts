@@ -45,7 +45,7 @@ export const router = createRouter({
     },
     {
       path: "/ledger/entries",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/ledger/pages/EntriesView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "流水" },
     },
     {

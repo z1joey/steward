@@ -71,6 +71,13 @@ class AlreadyProcessed(AppError):
     detail = "already_processed"
 
 
+class InsufficientBalance(AppError):
+    """公账余额不足（分红 require_sufficient_balance）→ 422，事务回滚零副作用。"""
+
+    status_code = 422
+    detail = "insufficient_balance"
+
+
 def register_exception_handlers(app) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:

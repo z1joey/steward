@@ -27,6 +27,15 @@ export const COPY = {
   payrollSettle: "结算工资",
   dividendConfirm: "确认发放",
   reverse: "冲正",
+  reversed: "已冲正",
+  pendingReview: "待审",
+  fromSettlement: "来自结算",
+  reverseReason: "原因（可选）",
+  confirmReverse: "确认冲正",
+  filterAll: "全部",
+  date: "日期",
+  amount: "金额",
+  memo: "摘要",
 
   // 认证 / 引导
   login: "登录",
