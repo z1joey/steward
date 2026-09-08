@@ -4,6 +4,11 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.core.db import Base
+import app.modules.auth.models  # noqa: F401
+import app.modules.invites.models  # noqa: F401
+import app.modules.memberships.models  # noqa: F401
+import app.modules.stores.models  # noqa: F401
+import app.modules.transfers.models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
