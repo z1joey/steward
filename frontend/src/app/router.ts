@@ -75,7 +75,7 @@ export const router = createRouter({
     },
     {
       path: "/settings/members",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/settings/pages/SettingsMembersView.vue"),
       meta: { requiresAuth: true, requiresStore: true, requiresManager: true, title: "本店成员" },
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },
