@@ -60,7 +60,7 @@ export const router = createRouter({
     },
     {
       path: "/overview",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/overview/pages/OverviewView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "概览" },
     },
     {
@@ -70,12 +70,12 @@ export const router = createRouter({
     },
     {
       path: "/employees/:id",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/employees/pages/EmployeeDetailView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "员工详情" },
     },
     {
       path: "/settings/members",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/settings/pages/SettingsMembersView.vue"),
       meta: { requiresAuth: true, requiresStore: true, requiresManager: true, title: "本店成员" },
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },
