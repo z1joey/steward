@@ -37,6 +37,11 @@ async def test_t_auth_01_register_then_login(client):
     assert r.status_code == 200
     assert r.json()["phone"] == phone
 
+    # 无 token → 401 unauthorized
+    r = await client.get("/me")
+    assert r.status_code == 401
+    assert r.json()["detail"] == "unauthorized"
+
 
 async def test_t_auth_02_login_without_store(client):
     """AC-AUTH-03（API 侧）：登录后无店 → 门店列表为空、无 pending。"""

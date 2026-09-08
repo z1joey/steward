@@ -114,3 +114,54 @@ async def test_t_inv_04_store_manager_cannot_invite(client, world):
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "forbidden_role"
+
+
+async def test_t_inv_reject_flow_then_accept_processed(client, world):
+    """拒绝流（TA-06 已实现）：非受邀人 403 · 拒绝 200 rejected · 再接受 409 已处理。"""
+    r = await client.post(
+        f"/stores/{world.s1_id}/invites",
+        json={"phone": world.m2.phone},
+        headers=bearer(world.m.token, world.s1_id),
+    )
+    assert r.status_code == 201, r.text
+    invite_id = r.json()["id"]
+
+    # 非受邀人（sm）拒绝 → 403 not_invitee
+    r = await client.post(
+        f"/invites/{invite_id}/reject",
+        json={"version": 1},
+        headers=bearer(world.sm.token),
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "not_invitee"
+
+    # 受邀人拒绝 → 200 rejected
+    r = await client.post(
+        f"/invites/{invite_id}/reject",
+        json={"version": 1},
+        headers=bearer(world.m2.token),
+    )
+    assert r.status_code == 200
+    assert r.json()["status"] == "rejected"
+
+    # 拒绝后接受 → 409 already_processed；门店列表仍无本店（拒绝不产生 membership）
+    r = await client.post(
+        f"/invites/{invite_id}/accept",
+        json={"version": 1},
+        headers=bearer(world.m2.token),
+    )
+    assert r.status_code == 409
+    assert r.json()["detail"] == "already_processed"
+    r = await client.get("/stores", headers=bearer(world.m2.token))
+    assert all(item["id"] != world.s1_id for item in r.json()["items"])
+
+
+async def test_t_iso_01_invite_path_store_id_must_match_header(client, world):
+    """路径 :store_id 与 X-Store-Id 不一致 → 按跨店资源 404。"""
+    r = await client.post(
+        f"/stores/{world.s2_id}/invites",
+        json={"phone": world.m2.phone},
+        headers=bearer(world.m.token, world.s1_id),   # header 指向 S1，路径指向 S2
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "not_found"

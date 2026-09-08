@@ -159,6 +159,17 @@ async def test_t_tr_02_only_one_pending_per_store(client, world):
     assert r.json()["detail"] == "pending_exists"
 
 
+async def test_t_tr_self_transfer_rejected(client, world):
+    """AC-TR（边界）：管理者转让给自己 → 422 self_transfer。"""
+    r = await client.post(
+        f"/stores/{world.s1_id}/transfers",
+        json={"phone": world.m.phone},
+        headers=bearer(world.m.token, world.s1_id),
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "self_transfer"
+
+
 async def test_t_tr_03_pending_transfer_keeps_seats(client, world, db_session: Session):
     """AC-TR-03：转让待处理期间席位不变。"""
     transfer = await _create_transfer(client, world, world.m2)
