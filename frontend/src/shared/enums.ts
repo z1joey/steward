@@ -66,4 +66,5 @@ export const JOB_TYPE_LABELS = {
 export const EMPLOYEE_STATUS_LABELS = {
   active: "在职",
   resigned: "离职",
+  on_leave: "请假",
 } as const;

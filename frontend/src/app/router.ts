@@ -65,7 +65,7 @@ export const router = createRouter({
     },
     {
       path: "/employees",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/employees/pages/EmployeesView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "员工" },
     },
     {

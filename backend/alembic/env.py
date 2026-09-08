@@ -7,11 +7,14 @@ from app.core.db import Base
 import app.modules.auth.models  # noqa: F401
 import app.modules.claims.models  # noqa: F401
 import app.modules.dividend.models  # noqa: F401
+import app.modules.employees.models  # noqa: F401
 import app.modules.invites.models  # noqa: F401
 import app.modules.ledger.models  # noqa: F401
 import app.modules.memberships.models  # noqa: F401
+import app.modules.payroll.models  # noqa: F401
 import app.modules.public_account.models  # noqa: F401
 import app.modules.recurring.models  # noqa: F401
+import app.modules.shifts.models  # noqa: F401
 import app.modules.stores.models  # noqa: F401
 import app.modules.transfers.models  # noqa: F401
 
