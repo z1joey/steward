@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -26,7 +27,7 @@ def month_stats(db: Session, ctx: StoreContext, month: str) -> StatsOut:
         end = date(year, mon + 1, 1)
 
     sums = dict(
-        db.query(LedgerEntry.direction, func.coalesce(func.sum(LedgerEntry.amount), 0))
+        db.query(LedgerEntry.direction, func.coalesce(func.sum(LedgerEntry.amount), Decimal("0")))
         .filter(
             LedgerEntry.store_id == ctx.store.id,
             LedgerEntry.entry_date >= start,
@@ -35,8 +36,8 @@ def month_stats(db: Session, ctx: StoreContext, month: str) -> StatsOut:
         .group_by(LedgerEntry.direction)
         .all()
     )
-    income = sums.get(Direction.income.value, 0)
-    expense = sums.get(Direction.expense.value, 0)
+    income = sums.get(Direction.income.value, Decimal("0"))
+    expense = sums.get(Direction.expense.value, Decimal("0"))
 
     acct = (
         db.query(PublicAccount).filter_by(store_id=ctx.store.id).one()

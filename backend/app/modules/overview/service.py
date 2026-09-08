@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -25,7 +26,7 @@ def get_overview(db: Session, ctx: StoreContext, month: str) -> OverviewOut:
     """概览（B-specs §5.1，Locked）：仅 ctx.store_id；无任何跨店聚合。"""
     start, end = _month_bounds(month)
     sums = dict(
-        db.query(LedgerEntry.direction, func.coalesce(func.sum(LedgerEntry.amount), 0))
+        db.query(LedgerEntry.direction, func.coalesce(func.sum(LedgerEntry.amount), Decimal("0")))
         .filter(
             LedgerEntry.store_id == ctx.store.id,
             LedgerEntry.entry_date >= start,
@@ -35,7 +36,7 @@ def get_overview(db: Session, ctx: StoreContext, month: str) -> OverviewOut:
         .all()
     )
     pending_count, pending_amount = (
-        db.query(func.count(ExpenseClaim.id), func.coalesce(func.sum(ExpenseClaim.amount), 0))
+        db.query(func.count(ExpenseClaim.id), func.coalesce(func.sum(ExpenseClaim.amount), Decimal("0")))
         .filter(
             ExpenseClaim.store_id == ctx.store.id,
             ExpenseClaim.status == ClaimStatus.pending.value,
@@ -46,8 +47,8 @@ def get_overview(db: Session, ctx: StoreContext, month: str) -> OverviewOut:
     return OverviewOut(
         store=StoreBriefOut(id=ctx.store.id, name=ctx.store.name),
         month=month,
-        income=sums.get(Direction.income.value, 0),
-        expense=sums.get(Direction.expense.value, 0),
+        income=sums.get(Direction.income.value, Decimal("0")),
+        expense=sums.get(Direction.expense.value, Decimal("0")),
         public_balance=acct.balance,
         pending_claims=PendingClaimsOut(
             count=int(pending_count or 0), amount=pending_amount
