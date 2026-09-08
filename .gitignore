@@ -2,3 +2,20 @@
 docs/
 PROJECT.md
 PROMPT-for-senior-model.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Node / frontend build
+node_modules/
+dist/
+test-results/
+playwright-report/
+.playwright-ms-playwright/
+
+# Local tool state
+.mimosa/
+.DS_Store
