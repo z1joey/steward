@@ -8,6 +8,7 @@ from app.modules.employees.router import router as employees_router
 from app.modules.invites.router import router as invites_router
 from app.modules.ledger.router import router as ledger_router
 from app.modules.memberships.router import router as memberships_router
+from app.modules.overview.router import router as overview_router
 from app.modules.payroll.router import router as payroll_router
 from app.modules.recurring.router import router as recurring_router
 from app.modules.shifts.router import router as shifts_router
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(employees_router)
     app.include_router(shifts_router)
     app.include_router(payroll_router)
+    app.include_router(overview_router)
     return app
 
 
