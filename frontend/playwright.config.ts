@@ -5,8 +5,10 @@ import { defineConfig } from "@playwright/test";
  * - 前端 Vite :8080（/api 代理 → localhost:8000）
  * - 后端 uvicorn :8000，独立 e2e 库 steward_e2e（写真实数据，与 dev/test 库隔离）
  * E2E_BASE_URL 指向他处时跳过前端 server（后端仍需本机 :8000 可用）。
+ * E2E_DATABASE_URL 可注入连接串（本地 docker Postgres 需带凭据）。
  */
-const E2E_DB = "postgresql+psycopg://localhost/steward_e2e";
+const E2E_DB =
+  process.env.E2E_DATABASE_URL ?? "postgresql+psycopg://localhost/steward_e2e";
 
 export default defineConfig({
   testDir: "./e2e",
