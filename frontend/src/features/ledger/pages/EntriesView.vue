@@ -4,6 +4,7 @@ import { onMounted, ref } from "vue";
 import { useLedgerStore } from "@/features/ledger/stores/ledger";
 import type { LedgerFilter } from "@/features/ledger/stores/ledger";
 import RecordEntryModal from "@/features/ledger/components/RecordEntryModal.vue";
+import ReverseModal from "@/features/ledger/components/ReverseModal.vue";
 import { useRole } from "@/app/composables/useRole";
 import { COPY } from "@/shared/copy";
 import { SOURCE_TYPE_LABELS } from "@/shared/enums";
@@ -13,11 +14,28 @@ import type { LedgerRow } from "@/shared/types";
  * TB-07 · 流水页（ui-spec §3.1 / AC-LED-04/06/07）：
  * 记一笔弹窗 · 六类筛选 chips · 待审行（管理者报销/驳回）· 已报销划线 ·
  * 工资行「来自结算」。
+ * TB-08 · 行内溢出菜单「冲正」（管理者）→ 确认弹窗（可选原因）；
+ * 成功后原行「已冲正」标签 + 新反向行（AC-LED-08 / US-B6 / [Open O-09]）。
  */
 const ledger = useLedgerStore();
 const { can } = useRole();
 
 const showRecord = ref(false);
+const reverseTarget = ref<{ id: number; version: number; memo: string } | null>(null);
+const menuFor = ref<number | null>(null);
+
+function toggleMenu(row: LedgerRow): void {
+  menuFor.value = menuFor.value === row.id ? null : row.id;
+}
+
+function openReverse(row: LedgerRow): void {
+  menuFor.value = null;
+  reverseTarget.value = { id: row.id, version: row.version, memo: row.memo };
+}
+
+async function onReversed(): Promise<void> {
+  await ledger.refresh();
+}
 
 const FILTERS: { value: LedgerFilter; label: string }[] = [
   { value: "all", label: COPY.filterAll },
@@ -98,7 +116,7 @@ function isPostedClaim(row: LedgerRow): boolean {
             <template v-else-if="isPostedClaim(row)">
               <span class="pill success">{{ COPY.claimedDone }}</span>
             </template>
-            <template v-else-if="row.is_reversal">
+            <template v-else-if="row.reversed_by_id != null">
               <span class="pill muted">{{ COPY.reversed }}</span>
             </template>
           </td>
@@ -117,6 +135,25 @@ function isPostedClaim(row: LedgerRow): boolean {
                 {{ COPY.claimReject }}
               </ConfirmButton>
             </template>
+            <template
+              v-else-if="row.row_type === 'entry' && can('ledger.reverse') && ledger.canReverse(row)"
+            >
+              <div class="menu-wrap">
+                <button
+                  type="button"
+                  class="menu-trigger"
+                  aria-label="更多操作"
+                  @click="toggleMenu(row)"
+                >
+                  ⋯
+                </button>
+                <div v-if="menuFor === row.id" class="menu">
+                  <button type="button" class="menu-item" @click="openReverse(row)">
+                    {{ COPY.reverse }}
+                  </button>
+                </div>
+              </div>
+            </template>
           </td>
         </tr>
         <tr v-if="ledger.items.length === 0 && !ledger.loading">
@@ -126,6 +163,7 @@ function isPostedClaim(row: LedgerRow): boolean {
     </table>
 
     <RecordEntryModal v-model="showRecord" @created="onCreated" />
+    <ReverseModal v-model="reverseTarget" @reversed="onReversed" />
   </div>
 </template>
 
@@ -256,5 +294,40 @@ tr.posted td .pill {
   text-align: center;
   color: var(--color-text-muted);
   padding: var(--space-xl);
+}
+.menu-wrap {
+  position: relative;
+  display: inline-block;
+}
+.menu-trigger {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  padding: 0 var(--space-sm);
+  cursor: pointer;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+  min-width: 88px;
+}
+.menu-item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+}
+.menu-item:hover {
+  background: var(--color-primary-soft);
 }
 </style>

@@ -41,6 +41,14 @@ export const useLedgerStore = defineStore("ledger", {
       await api.post(`/claims/${claimId}/reject`, { version });
       await this.refresh();
     },
+    async reverseEntry(entryId: number, version: number, reason: string): Promise<void> {
+      await api.post(`/ledger/entries/${entryId}/reverse`, { version, reason });
+      await this.refresh();
+    },
+    /** 冲正入口可达性：普通分录、未被冲正过（TB-08）。 */
+    canReverse(row: LedgerRow): boolean {
+      return row.row_type === "entry" && !row.is_reversal && row.reversed_by_id == null;
+    },
     $reset() {
       this.items = [];
       this.total = 0;
