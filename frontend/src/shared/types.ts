@@ -142,3 +142,84 @@ export interface DividendConfirmResponse {
   entry: LedgerRow;
   public: { balance: string; version: number };
 }
+
+// —— Phase D · Employees / Shifts / Payroll ——
+
+export type JobType = "long_term" | "summer" | "winter" | "weekend" | "temporary";
+export type EmployeeStatusType = "active" | "resigned";
+
+export interface EmployeeItem {
+  id: number;
+  name: string;
+  status: EmployeeStatusType;
+  display_status: "active" | "resigned" | "on_leave";
+  contact: string;
+  job_type: JobType;
+  notes: string;
+  resigned_on: string | null;
+  version: number;
+}
+
+export interface LeaveItem {
+  id: number;
+  employee_id: number;
+  start_date: string;
+  end_date: string;
+  note: string;
+  version: number;
+}
+
+export interface EmployeeDetail extends EmployeeItem {
+  leaves: LeaveItem[];
+}
+
+export interface ShiftSegmentItem {
+  id: number;
+  employee_id: number;
+  start_at: string;
+  end_at: string;
+  minutes: number;
+  version: number;
+}
+
+export interface ShiftEmployee {
+  id: number;
+  name: string;
+  status: string;
+  display_status: string;
+  job_type: JobType;
+  version: number;
+}
+
+export interface ShiftList {
+  items: ShiftSegmentItem[];
+  employees: ShiftEmployee[];
+}
+
+export interface PayrollPreviewRow {
+  employee_id: number;
+  name: string;
+  hours: string;
+  amount: string | null;
+  segments_count: number;
+}
+
+export interface PayrollRunView {
+  id: number;
+  period_month: string;
+  total_amount: string;
+  lines: {
+    employee_id: number;
+    hours: string;
+    amount: string;
+    ledger_entry_id: number | null;
+  }[];
+}
+
+export interface PayrollData {
+  month: string;
+  settled: PayrollRunView | null;
+  preview: PayrollPreviewRow[];
+  total_hours: string;
+  total_amount: string | null;
+}
