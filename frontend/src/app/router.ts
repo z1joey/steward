@@ -50,12 +50,12 @@ export const router = createRouter({
     },
     {
       path: "/ledger/recurring",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/recurring/pages/RecurringView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "周期" },
     },
     {
       path: "/ledger/stats",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/stats/pages/StatsView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "统计" },
     },
     {

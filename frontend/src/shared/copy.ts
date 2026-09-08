@@ -37,6 +37,31 @@ export const COPY = {
   amount: "金额",
   memo: "摘要",
 
+  // 周期（TC-05）
+  newRecurring: "新建周期项",
+  editRecurring: "编辑周期项",
+  recurringName: "名称",
+  recurringKind: "类型",
+  recurringFixed: "固定金额",
+  recurringFloating: "浮动",
+  recordThisMonth: "记本月",
+  thisMonthNotRecorded: "本月未录",
+  wagesNoHandFill: "员工工资来自结算，禁手填",
+  edit: "编辑",
+  operations: "操作",
+  active: "启用",
+  inactive: "停用",
+
+  // 统计 / 分红（TC-06）
+  income: "收入",
+  expense: "支出",
+  profitRate: "利润率",
+  publicAccount: "公账",
+  recentTxns: "最近变动",
+  dividendAmount: "分红金额",
+  overBalance: "超过公账余额",
+  insufficientBalance: "余额不足，未入账",
+
   // 认证 / 引导
   login: "登录",
   register: "注册",
