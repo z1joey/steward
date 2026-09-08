@@ -60,7 +60,7 @@ export const router = createRouter({
     },
     {
       path: "/overview",
-      component: () => import("@/features/placeholder/pages/PlaceholderView.vue"),
+      component: () => import("@/features/overview/pages/OverviewView.vue"),
       meta: { requiresAuth: true, requiresStore: true, title: "概览" },
     },
     {
