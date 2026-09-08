@@ -1,9 +1,22 @@
 import { defineStore } from "pinia";
 
 import { api } from "@/app/http";
+import { registerStoreReset } from "@/app/reset";
 import type { LedgerList, LedgerRow } from "@/shared/types";
 
 export type LedgerFilter = "all" | "manual" | "claim" | "payroll" | "dividend" | "recurring";
+
+/**
+ * TB-09 · 切店重置注册（resetStoreScopedStores → $reset，清残影 AC-ISO-03）。
+ * 需在 Pinia 激活后调用一次（页面 onMounted）；幂等。
+ */
+let resetRegistered = false;
+
+export function ensureLedgerResetRegistered(): void {
+  if (resetRegistered) return;
+  resetRegistered = true;
+  registerStoreReset(() => useLedgerStore().$reset());
+}
 
 /**
  * TB-07/TB-09 · ledgerStore：流水列表状态。

@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
-import { useLedgerStore } from "@/features/ledger/stores/ledger";
+import { registerRefreshHook } from "@/app/http";
+import {
+  ensureLedgerResetRegistered,
+  useLedgerStore,
+} from "@/features/ledger/stores/ledger";
 import type { LedgerFilter } from "@/features/ledger/stores/ledger";
 import RecordEntryModal from "@/features/ledger/components/RecordEntryModal.vue";
 import ReverseModal from "@/features/ledger/components/ReverseModal.vue";
@@ -46,8 +50,17 @@ const FILTERS: { value: LedgerFilter; label: string }[] = [
   { value: "recurring", label: SOURCE_TYPE_LABELS.recurring },
 ];
 
+let unregisterRefresh: (() => void) | null = null;
+
 onMounted(() => {
+  // TB-09：切店 $reset 注册（AC-ISO-03）+ 409 全局钩子 → refresh()（AC-CON-02）
+  ensureLedgerResetRegistered();
   ledger.refresh();
+  unregisterRefresh = registerRefreshHook(() => void ledger.refresh());
+});
+onBeforeUnmount(() => {
+  unregisterRefresh?.();
+  unregisterRefresh = null;
 });
 
 async function onCreated(): Promise<void> {
