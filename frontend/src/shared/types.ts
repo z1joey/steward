@@ -137,6 +137,11 @@ export interface LedgerStats {
   };
 }
 
+export interface BalanceAdjustResponse {
+  balance: string;
+  public_txn: { id: number; balance_after: string | null };
+}
+
 export interface DividendConfirmResponse {
   run: { id: number; amount: string; confirmed_at: string };
   entry: LedgerRow;

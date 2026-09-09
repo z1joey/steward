@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { registerRefreshHook } from "@/app/http";
 import { useRole } from "@/app/composables/useRole";
 import { ensureStatsResetRegistered, useStatsStore } from "@/features/stats/stores/stats";
+import AppModal from "@/shared/components/AppModal.vue";
 import ConfirmButton from "@/shared/components/ConfirmButton.vue";
 import { COPY } from "@/shared/copy";
 import { SOURCE_TYPE_LABELS, TXN_DIRECTION_LABELS } from "@/shared/enums";
@@ -11,7 +12,8 @@ import type { RecentTxn } from "@/shared/types";
 
 /**
  * TC-06 · /ledger/stats（AC-STAT-01 / AC-DIV-01~03 / US-C2/C3/C4 / ui-spec §3.3）：
- * KPI 卡 ×3（利润率 null → 「—」）；公账卡（余额 + 最近变动 in 绿 / out 默认）；
+ * KPI 卡 ×3（利润率 null → 「—」）；公账卡（余额 + 最近变动 in 绿 / out 默认 +
+ * 管理者「调整余额」——新余额 + 必填原因，生成公账调整分录）；
  * 分红区：管理者输入 + 确认发放（> 余额即时红字 + 禁用；422 红字不出现成功态）；
  * 店长金额只读、无按钮。
  */
@@ -20,6 +22,31 @@ const { isManager } = useRole();
 
 const dividendAmount = ref("");
 const dividendMemo = ref("");
+
+// 公账余额调整（管理者）
+const adjustOpen = ref(false);
+const adjustNewBalance = ref("");
+const adjustReason = ref("");
+const adjustDisabled = computed(
+  () => adjustNewBalance.value === "" || adjustReason.value.trim() === "",
+);
+
+async function openAdjust(): Promise<void> {
+  adjustNewBalance.value = String(stats.stats?.public.balance ?? "");
+  adjustReason.value = "";
+  stats.adjustError = "";
+  adjustOpen.value = true;
+}
+
+async function submitAdjust(): Promise<void> {
+  if (adjustDisabled.value) return;
+  try {
+    await stats.adjustBalance(adjustNewBalance.value, adjustReason.value.trim());
+    adjustOpen.value = false;
+  } catch {
+    // 422 → stats.adjustError 红字；409 → 全局 toast + refresh
+  }
+}
 
 let unregisterRefresh: (() => void) | null = null;
 
@@ -83,7 +110,12 @@ function fmtTxn(t: RecentTxn): string {
     <div class="card public-card">
       <div class="public-head">
         <span class="kpi-label">{{ COPY.publicAccount }}</span>
-        <span class="kpi-value tabular">{{ balance }}</span>
+        <span class="head-right">
+          <span class="kpi-value tabular">{{ balance }}</span>
+          <ConfirmButton v-if="isManager" :action="openAdjust">
+            {{ COPY.adjustBalance }}
+          </ConfirmButton>
+        </span>
       </div>
       <div class="recent">
         <div class="recent-title">{{ COPY.recentTxns }}</div>
@@ -99,6 +131,41 @@ function fmtTxn(t: RecentTxn): string {
         </p>
       </div>
     </div>
+
+    <AppModal :open="adjustOpen" :title="COPY.adjustBalance" @close="adjustOpen = false">
+      <p class="adjust-hint">{{ COPY.adjustHint }}</p>
+      <div class="adjust-form">
+        <label class="field">
+          <span>{{ COPY.currentBalance }}</span>
+          <input class="tabular" :value="balance" readonly />
+        </label>
+        <label class="field">
+          <span>{{ COPY.newBalance }}</span>
+          <input
+            v-model="adjustNewBalance"
+            class="tabular"
+            type="number"
+            step="0.01"
+            @input="stats.adjustError = ''"
+          />
+        </label>
+        <label class="field">
+          <span>{{ COPY.adjustReason }}</span>
+          <input
+            v-model="adjustReason"
+            maxlength="500"
+            placeholder="如：盘点差异、期初补录"
+            @input="stats.adjustError = ''"
+          />
+        </label>
+      </div>
+      <p v-if="stats.adjustError" class="error">{{ stats.adjustError }}</p>
+      <div class="actions">
+        <ConfirmButton :action="submitAdjust" :disabled="adjustDisabled">
+          {{ COPY.adjustBalance }}
+        </ConfirmButton>
+      </div>
+    </AppModal>
 
     <div class="card dividend-card">
       <div class="kpi-label">{{ COPY.dividendConfirm }}</div>
@@ -173,6 +240,24 @@ function fmtTxn(t: RecentTxn): string {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+}
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+.adjust-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.adjust-form {
+  display: grid;
+  gap: var(--space-md);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
 }
 .recent {
   display: grid;
