@@ -35,6 +35,7 @@ class SourceType(str, Enum):
     payroll = "payroll"
     dividend = "dividend"
     recurring = "recurring"
+    adjustment = "adjustment"              # 公账余额调整（管理者，原因必填）
 
 
 class Direction(str, Enum):

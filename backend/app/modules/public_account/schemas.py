@@ -1,9 +1,11 @@
-"""公账 schemas（余额调整 [管理者]，B-specs §2.2 钱管道约束下的受控修改）。"""
+"""公账 schemas（余额调整 [管理者] + 调整记录公示）。"""
 
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.enums import Direction
 from app.modules.claims.schemas import PublicTxnBrief
 from app.modules.ledger.schemas import EntryView
 
@@ -32,3 +34,20 @@ class BalanceAdjustOut(BaseModel):
     entry: EntryView
     public_txn: PublicTxnBrief
     balance: Decimal
+
+
+class AdjustmentItem(BaseModel):
+    """一条公账调整记录（分录 + 配对公账流水的投影）。"""
+
+    id: int          # ledger_entry id
+    date: date
+    direction: Direction
+    amount: Decimal
+    reason: str      # memo 去掉「公账调整：」前缀
+    balance_after: Decimal
+    created_at: datetime
+
+
+class AdjustmentListOut(BaseModel):
+    items: list[AdjustmentItem]
+    total: int

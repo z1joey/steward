@@ -130,6 +130,28 @@ function fmtTxn(t: RecentTxn): string {
           暂无变动
         </p>
       </div>
+
+      <!-- 调整记录公示：最近 3 条（两角色可见）；查看更多 → 流水页调整筛选 -->
+      <div v-if="stats.adjustments.items.length" class="recent">
+        <div class="recent-title">
+          {{ COPY.adjustLog }}（{{ stats.adjustments.total }}）
+          <RouterLink
+            v-if="stats.adjustments.total > stats.adjustments.items.length"
+            class="link"
+            to="/ledger/entries?filter=adjustment"
+          >
+            {{ COPY.viewMore }}
+          </RouterLink>
+        </div>
+        <div v-for="a in stats.adjustments.items" :key="a.id" class="txn">
+          <span class="txn-memo">
+            {{ a.date }} · {{ a.reason }}
+          </span>
+          <span class="tabular" :class="{ 'txn-in': a.direction === 'income' }">
+            {{ a.direction === "income" ? "调增" : "调减" }} {{ a.amount }} · 余额 {{ a.balance_after }}
+          </span>
+        </div>
+      </div>
     </div>
 
     <AppModal :open="adjustOpen" :title="COPY.adjustBalance" @close="adjustOpen = false">
@@ -266,6 +288,14 @@ function fmtTxn(t: RecentTxn): string {
 .recent-title {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+  margin-left: var(--space-sm);
+}
+.link:hover {
+  text-decoration: underline;
 }
 .txn {
   display: flex;

@@ -142,6 +142,21 @@ export interface BalanceAdjustResponse {
   public_txn: { id: number; balance_after: string | null };
 }
 
+export interface AdjustmentItem {
+  id: number;
+  date: string;
+  direction: "income" | "expense";
+  amount: string;
+  reason: string;
+  balance_after: string;
+  created_at: string;
+}
+
+export interface AdjustmentList {
+  items: AdjustmentItem[];
+  total: number;
+}
+
 export interface DividendConfirmResponse {
   run: { id: number; amount: string; confirmed_at: string };
   entry: LedgerRow;

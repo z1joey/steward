@@ -42,6 +42,8 @@ export const COPY = {
   adjustHint: "调整将生成一笔「公账调整」分录并计入最近变动；原因必填，审计可查。",
   adjustFailed: "调整失败，请检查输入后重试",
   noChange: "新余额与当前余额相同",
+  adjustLog: "调整记录",
+  viewMore: "查看更多",
   filterAll: "全部",
   date: "日期",
   amount: "金额",

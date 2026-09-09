@@ -133,3 +133,53 @@ async def test_adjust_isolation_between_stores(client, world, db_session):
     assert _balance(db_session, world.s2_id) == Decimal("88.00")
     assert _balance(db_session, world.s1_id) == Decimal("0")
     assert db_session.query(PA).filter_by(store_id=world.s1_id).one().version == 1
+
+
+async def test_adjustments_public_list_and_filter(client, world, db_session):
+    """公示：调整记录倒序、默认 3 条 + total；店长可查；流水 filter=adjustment 可筛。"""
+    h1 = bearer(world.m.token, world.s1_id)
+    for i, target in enumerate(("100", "200", "300", "400"), start=1):
+        r = await client.get("/ledger/stats", headers=h1)
+        version = r.json()["public"]["version"]
+        r = await client.post(
+            "/public-account/adjust",
+            json={"new_balance": target, "reason": f"第{i}次调整",
+                  "public_account_version": version},
+            headers=h1,
+        )
+        assert r.status_code == 201, r.text
+
+    # 店长也能查公示（公示是给全店看的）
+    r = await client.get(
+        "/public-account/adjustments", headers=bearer(world.sm.token, world.s1_id)
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["total"] == 4
+    assert len(body["items"]) == 3                       # 默认公示最近 3 条
+    assert [i["reason"] for i in body["items"]] == [     # 倒序：最新在前
+        "第4次调整", "第3次调整", "第2次调整",
+    ]
+    assert Decimal(body["items"][0]["balance_after"]) == Decimal("400.00")
+    assert body["items"][0]["direction"] == "income"
+
+    # 查看更多：分页取第 4 条
+    r = await client.get(
+        "/public-account/adjustments?limit=3&offset=3", headers=h1
+    )
+    body = r.json()
+    assert [i["reason"] for i in body["items"]] == ["第1次调整"]
+    assert Decimal(body["items"][0]["balance_after"]) == Decimal("100.00")
+
+    # 流水页 filter=adjustment 可筛出调整分录（reason 在 memo 中）
+    r = await client.get("/ledger/entries?filter=adjustment", headers=h1)
+    assert r.status_code == 200
+    items = r.json()["items"]
+    assert len(items) == 4
+    assert all(row["source_type"] == "adjustment" for row in items)
+
+    # 店隔离：S2 无调整记录
+    r = await client.get(
+        "/public-account/adjustments", headers=bearer(world.m.token, world.s2_id)
+    )
+    assert r.json()["total"] == 0
