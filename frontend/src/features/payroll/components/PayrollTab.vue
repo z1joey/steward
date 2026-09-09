@@ -176,7 +176,9 @@ async function settle(): Promise<void> {
   border-bottom: 1px solid var(--color-line);
   font-size: var(--text-md);
 }
-.right {
+/* .table th 的 text-align:left 优先级(0,1,1)高于单类 .right(0,1,0)，
+   会盖掉表头右对齐——用 .table .right(0,2,0) 压回 */
+.table .right {
   text-align: right;
 }
 .tabular {
