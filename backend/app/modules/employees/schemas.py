@@ -1,20 +1,38 @@
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.enums import EmployeeStatus, JobType
 
+PayType = Literal["hourly", "daily"]
 
-class EmployeeCreateIn(BaseModel):
+
+class _PayPairValidatorMixin(BaseModel):
+    """[O-07] pay_type 与 unit_price 必须同设或同空（DB ck_employees_pay_pair 前置校验）。"""
+
+    @model_validator(mode="after")
+    def _pay_pair(self):  # noqa: ANN001, ANN202
+        if (self.pay_type is None) != (self.unit_price is None):
+            raise ValueError("pay_type 与 unit_price 必须同时设置")
+        return self
+
+
+class EmployeeCreateIn(_PayPairValidatorMixin):
     name: str = Field(min_length=1, max_length=50)
     contact: str = Field(default="", max_length=100)
     job_type: JobType
     notes: str = ""
+    pay_type: PayType | None = None
+    unit_price: Decimal | None = Field(default=None, gt=0)
 
 
-class EmployeeUpdateIn(BaseModel):
-    """不接受 status / resigned_on / user_id（extra="forbid" → 422）。"""
+class EmployeeUpdateIn(_PayPairValidatorMixin):
+    """不接受 status / resigned_on / user_id（extra="forbid" → 422）。
+
+    计薪字段（[O-07]）一旦设置不支持清除，只能改方式或改价。
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -23,6 +41,8 @@ class EmployeeUpdateIn(BaseModel):
     contact: str | None = Field(default=None, max_length=100)
     job_type: JobType | None = None
     notes: str | None = None
+    pay_type: PayType | None = None
+    unit_price: Decimal | None = Field(default=None, gt=0)
 
 
 class LeaveCreateIn(BaseModel):
@@ -57,6 +77,8 @@ class EmployeeOut(BaseModel):
     contact: str
     job_type: JobType
     notes: str
+    pay_type: str | None = None      # [O-07]
+    unit_price: Decimal | None = None
     resigned_on: date | None
     version: int
 
