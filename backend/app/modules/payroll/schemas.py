@@ -18,8 +18,10 @@ class PayrollPreviewRow(BaseModel):
     employee_id: int
     name: str
     hours: Decimal
+    worked_days: int = 0   # [O-07] 自然日出勤天数（按日算法依据）
     amount: Decimal | None
     segments_count: int
+    pay_type: str | None = None   # hourly / daily；null = 未设置计薪
 
 
 class PayrollLineView(BaseModel):

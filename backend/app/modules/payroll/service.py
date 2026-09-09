@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -26,6 +27,20 @@ from app.posting.service import EntryDraft, post
 _MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 
 
+@dataclass
+class _Preview:
+    """内部聚合行：含 rate_snapshot 明细（不进 GET 响应，结算时落 payroll_lines）。"""
+
+    employee_id: int
+    name: str
+    hours: Decimal
+    worked_days: int
+    segments_count: int
+    pay_type: str | None
+    amount: Decimal | None
+    snapshot: dict | None
+
+
 def _month_bounds(month: str) -> tuple[datetime, datetime]:
     year, mon = (int(p) for p in month.split("-"))
     start = datetime(year, mon, 1).astimezone()
@@ -43,25 +58,31 @@ def _last_day(month: str) -> date:
 
 def _aggregate_preview(
     db: Session, ctx: StoreContext, month: str
-) -> list[PayrollPreviewRow]:
-    """compute-on-read [C · O-16]：按 start_at 归月求工时；请假不扣减 [Open O-25]。"""
+) -> list[_Preview]:
+    """compute-on-read [C · O-16]：按 start_at 归月求工时；请假不扣减 [Open O-25]。
+
+    [O-07] 按日算法需要自然日出勤天数 → 单条 SQL 按 (employee_id, 出勤日) 分组，
+    派生 hours（Σ 段时长）与 worked_days（distinct 天数，同日多段计 1 天）。
+    """
     start, end = _month_bounds(month)
-    # (end_at − start_at) 求和后 / 60 → 小时数（epoch 为秒，故除 3600；段时长以分钟粒度）
-    total_seconds = func.sum(
+    # (end_at − start_at) 求和后 / 3600 → 小时数（epoch 为秒；段时长以分钟粒度）
+    day_seconds = func.sum(
         extract("epoch", ShiftSegment.end_at - ShiftSegment.start_at)
     )
+    day = func.date(ShiftSegment.start_at)   # 服务端单一时区口径（O-21，与 _month_bounds 一致）
     rows = (
         db.query(
             ShiftSegment.employee_id,
             func.count(ShiftSegment.id),
-            total_seconds / 3600.0,
+            day_seconds / 3600.0,
+            day,
         )
         .filter(
             ShiftSegment.store_id == ctx.store.id,
             ShiftSegment.start_at >= start,
             ShiftSegment.start_at < end,
         )
-        .group_by(ShiftSegment.employee_id)
+        .group_by(ShiftSegment.employee_id, day)
         .all()
     )
     if not rows:
@@ -72,20 +93,38 @@ def _aggregate_preview(
         .filter(Employee.store_id == ctx.store.id)
         .all()
     }
-    preview: list[PayrollPreviewRow] = []
-    for employee_id, segments_count, minutes in rows:
+
+    agg: dict[int, dict] = {}
+    for employee_id, segments_count, day_hours, _worked_day in rows:
         employee = employees.get(employee_id)
         if employee is None:
             continue
-        hours = Decimal(str(minutes or 0)).quantize(Decimal("0.01"))
-        amount = rate_rule.compute(employee, hours, month)   # DI：测试可 monkeypatch
+        slot = agg.setdefault(
+            employee_id,
+            {"employee": employee, "hours": Decimal("0"), "days": 0, "segments": 0},
+        )
+        slot["hours"] += Decimal(str(day_hours or 0))
+        slot["days"] += 1          # 每个 distinct 出勤日 +1（同日多段合并在同一分组行）
+        slot["segments"] += int(segments_count)
+
+    preview: list[_Preview] = []
+    for employee_id in sorted(agg):
+        slot = agg[employee_id]
+        employee = slot["employee"]
+        hours = slot["hours"].quantize(Decimal("0.01"))
+        outcome = rate_rule.compute(
+            employee, hours, month, worked_days=slot["days"]
+        )   # DI：测试可 monkeypatch
         preview.append(
-            PayrollPreviewRow(
+            _Preview(
                 employee_id=employee_id,
                 name=employee.name,
                 hours=hours,
-                amount=amount,
-                segments_count=int(segments_count),
+                worked_days=slot["days"],
+                segments_count=slot["segments"],
+                pay_type=employee.pay_type,
+                amount=outcome.amount if outcome is not None else None,
+                snapshot=outcome.snapshot if outcome is not None else None,
             )
         )
     return preview
@@ -129,7 +168,18 @@ def get_payroll(db: Session, ctx: StoreContext, month: str) -> PayrollOut:
     return PayrollOut(
         month=month,
         settled=settled,
-        preview=preview,
+        preview=[
+            PayrollPreviewRow(
+                employee_id=p.employee_id,
+                name=p.name,
+                hours=p.hours,
+                worked_days=p.worked_days,
+                segments_count=p.segments_count,
+                pay_type=p.pay_type,
+                amount=p.amount,
+            )
+            for p in preview
+        ],
         total_hours=total_hours,
         total_amount=total_amount,
     )
@@ -161,7 +211,7 @@ def settle_payroll(
         raise BusinessError("nothing_to_settle")   # AC-PAY-04：无班次无应发
     rows = [p for p in preview if p.hours > 0]
     if any(p.amount is None for p in rows):
-        raise BusinessError("rate_rule_missing")   # [Open O-07]
+        raise BusinessError("rate_rule_missing")   # 员工未设置计薪方式/单价
 
     total = Decimal("0")
     run = PayrollRun(
@@ -182,7 +232,7 @@ def settle_payroll(
             employee_id=p.employee_id,
             hours=p.hours,
             amount=amount,
-            rate_snapshot={"rate_rule": "settled"},   # 快照结构 [Open O-07]
+            rate_snapshot=p.snapshot or {"rate_rule": "settled"},   # [O-07] 真实算薪明细
         )
         db.add(line)
         db.flush()   # 取 line.id 作 source_id
