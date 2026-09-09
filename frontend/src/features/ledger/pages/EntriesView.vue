@@ -156,13 +156,19 @@ function isPostedClaim(row: LedgerRow): boolean {
                 <button
                   type="button"
                   class="menu-trigger"
-                  aria-label="更多操作"
+                  :aria-label="COPY.moreActions"
+                  :title="COPY.moreActions"
                   @click="toggleMenu(row)"
                 >
                   ⋯
                 </button>
                 <div v-if="menuFor === row.id" class="menu">
-                  <button type="button" class="menu-item" @click="openReverse(row)">
+                  <button
+                    type="button"
+                    class="menu-item"
+                    :title="COPY.reverseHint"
+                    @click="openReverse(row)"
+                  >
                     {{ COPY.reverse }}
                   </button>
                 </div>
