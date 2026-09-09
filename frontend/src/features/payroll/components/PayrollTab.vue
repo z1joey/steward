@@ -11,8 +11,8 @@ import ConfirmButton from "@/shared/components/ConfirmButton.vue";
 import { COPY } from "@/shared/copy";
 
 /**
- * TD-09 · 薪资 Tab（AC-PAY-01/02 / US-E7/E8 · [Open O-07]）：
- * 月选择器；表 姓名/工时/应发（null →「待费率拍板」）/段数；无「计算」按钮；
+ * TD-09 · 薪资 Tab（AC-PAY-01/02 / US-E7/E8 · [O-07 拍板 2026-09-09]）：
+ * 月选择器；表 姓名/工时/出勤/应发（null →「未设置计薪」）/段数；无「计算」按钮；
  * 排班保存后自动 refresh；管理者「结算工资」ConfirmButton；已结算月只读 + 链接
  * filter=payroll；店长不渲染按钮。
  */
@@ -49,7 +49,7 @@ async function settle(): Promise<void> {
     const status = (e as { response?: { status?: number; data?: { detail?: string } } })
       .response?.status;
     if (status === 422) {
-      settleError.value = "无可结算行或费率未拍板";
+      settleError.value = COPY.settleBlocked;
     }
     // 409 → 全局 toast + refresh 兜底
   }
@@ -110,6 +110,7 @@ async function settle(): Promise<void> {
           <tr>
             <th>{{ COPY.employeeName }}</th>
             <th>工时</th>
+            <th class="right">{{ COPY.attendance }}</th>
             <th class="right">应发</th>
             <th class="right">段数</th>
           </tr>
@@ -118,13 +119,14 @@ async function settle(): Promise<void> {
           <tr v-for="p in payroll.data?.preview ?? []" :key="p.employee_id">
             <td>{{ p.name }}</td>
             <td class="tabular">{{ p.hours }}</td>
+            <td class="right tabular">{{ p.worked_days }} 天</td>
             <td class="right tabular">
               {{ p.amount ?? COPY.ratePending }}
             </td>
             <td class="right tabular">{{ p.segments_count }}</td>
           </tr>
           <tr v-if="(payroll.data?.preview.length ?? 0) === 0 && !payroll.loading">
-            <td class="empty" colspan="4">本月暂无排班</td>
+            <td class="empty" colspan="5">本月暂无排班</td>
           </tr>
         </tbody>
       </table>

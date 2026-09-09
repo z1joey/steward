@@ -7,11 +7,11 @@ import AppModal from "@/shared/components/AppModal.vue";
 import ConfirmButton from "@/shared/components/ConfirmButton.vue";
 import { COPY } from "@/shared/copy";
 import { EMPLOYEE_STATUS_LABELS, JOB_TYPE_LABELS } from "@/shared/enums";
-import type { JobType } from "@/shared/types";
+import type { JobType, PayType } from "@/shared/types";
 
 /**
  * TD-06 · 花名册 Tab（AC-EMP-01/02 / US-E1）：
- * 列 姓名/状态 pill/联系方式/工种/备注；「新增员工」抽屉；
+ * 列 姓名/状态 pill/联系方式/工种/备注；「新增员工」抽屉（[O-07] 可选计薪方式+单价）；
  * 行上无请假/离职控件（Locked）；「显示已离职」开关 [C]。
  */
 const employees = useEmployeesStore();
@@ -22,6 +22,8 @@ const formName = ref("");
 const formContact = ref("");
 const formJobType = ref<JobType>("long_term");
 const formNotes = ref("");
+const formPayType = ref<PayType | "">("");
+const formUnitPrice = ref("");
 
 const JOB_OPTIONS: JobType[] = ["long_term", "summer", "winter", "weekend", "temporary"];
 
@@ -32,11 +34,17 @@ async function submitCreate(): Promise<void> {
     contact: formContact.value.trim(),
     job_type: formJobType.value,
     notes: formNotes.value.trim(),
+    // [O-07] 可选：成对下发，未设置则不带（后端默认双 null）
+    ...(formPayType.value !== "" && formUnitPrice.value !== ""
+      ? { pay_type: formPayType.value, unit_price: formUnitPrice.value }
+      : {}),
   });
   drawerOpen.value = false;
   formName.value = "";
   formContact.value = "";
   formNotes.value = "";
+  formPayType.value = "";
+  formUnitPrice.value = "";
 }
 </script>
 
@@ -109,6 +117,26 @@ async function submitCreate(): Promise<void> {
         <span>{{ COPY.notesLabel }}</span>
         <input v-model="formNotes" maxlength="500" />
       </label>
+      <div class="grid2">
+        <label class="field">
+          <span>{{ COPY.payTypeLabel }}</span>
+          <select v-model="formPayType">
+            <option value="">{{ COPY.payTypeNone }}</option>
+            <option value="hourly">{{ COPY.payTypeHourly }}</option>
+            <option value="daily">{{ COPY.payTypeDaily }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>{{ COPY.unitPrice }}</span>
+          <input
+            v-model="formUnitPrice"
+            type="number"
+            min="0.01"
+            step="0.01"
+            :disabled="formPayType === ''"
+          />
+        </label>
+      </div>
       <div class="actions">
         <ConfirmButton :action="submitCreate">{{ COPY.addEmployee }}</ConfirmButton>
       </div>
@@ -207,6 +235,11 @@ async function submitCreate(): Promise<void> {
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-md);
   font-size: var(--text-md);
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
 }
 .actions {
   display: flex;
