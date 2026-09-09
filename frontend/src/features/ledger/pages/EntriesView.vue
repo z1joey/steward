@@ -229,7 +229,8 @@ function isPostedClaim(row: LedgerRow): boolean {
   border-collapse: collapse;
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* 不设 overflow:hidden：行内 ⋯ 下拉菜单（absolute 定位）会被表格边界裁剪；
+     自身背景色本就受 border-radius 约束，无需裁剪子元素 */
 }
 .entries th {
   text-align: left;
