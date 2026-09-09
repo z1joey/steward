@@ -1,7 +1,7 @@
 """TD-T1 · T-PAY-01~05（testing.md §3，P0：T-PAY-02/03）。
 
-T-PAY-02 通过测试专用 rate_rule 依赖注入桩运行（仅测试，非产品功能，[Open O-07]）：
-monkeypatch app.modules.payroll.rate_rule.compute。
+[O-07 拍板 2026-09-09] 真实费率规则已落地（单价存员工档案）：
+用例直接以 pay_type + unit_price 造数，不再依赖 DI 桩。
 """
 
 from datetime import date, timedelta
@@ -13,12 +13,13 @@ from app.modules.payroll.models import PayrollRun
 from tests.helpers import bearer
 
 
-async def _setup(client, world, db_session) -> tuple[dict, str]:
-    """S1 员工 + 本周一段 4h。返回 (employee, month)。"""
+async def _setup(client, world, db_session, *, with_pay: bool = True) -> tuple[dict, str]:
+    """S1 员工（默认 时薪 50）+ 本周一段 4h。返回 (employee, month)。"""
     h = bearer(world.m.token, world.s1_id)
-    r = await client.post(
-        "/employees", json={"name": "张三", "job_type": "long_term"}, headers=h
-    )
+    body: dict = {"name": "张三", "job_type": "long_term"}
+    if with_pay:
+        body |= {"pay_type": "hourly", "unit_price": "50"}
+    r = await client.post("/employees", json=body, headers=h)
     assert r.status_code == 201, r.text
     emp = r.json()
     today = date.today()
@@ -36,19 +37,10 @@ async def _setup(client, world, db_session) -> tuple[dict, str]:
     return emp, monday.strftime("%Y-%m")
 
 
-def _stub_rate(monkeypatch, hourly: str = "50"):
-    """rate_rule 依赖注入桩：时薪计薪（仅测试）。"""
-    from app.modules.payroll import rate_rule
-
-    monkeypatch.setattr(
-        rate_rule, "compute", lambda e, hours, m: hours * Decimal(hourly)
-    )
-
-
-async def test_t_pay_02_settle_posts_entry_matching_line(client, world, db_session, monkeypatch):
+async def test_t_pay_02_settle_posts_entry_matching_line(client, world, db_session):
     """P0 · AC-PAY-02/AC-REC-03：流水金额 == payroll_lines.amount；体带 amount → 422。"""
     emp, month = await _setup(client, world, db_session)
-    _stub_rate(monkeypatch)
+    assert emp["pay_type"] == "hourly" and Decimal(emp["unit_price"]) == Decimal("50")
     h = bearer(world.m.token, world.s1_id)
 
     # 请求体夹带金额字段 → 422 client_amount_forbidden（Locked）
@@ -61,7 +53,7 @@ async def test_t_pay_02_settle_posts_entry_matching_line(client, world, db_sessi
     run = r.json()["run"]
     assert len(run["lines"]) == 1
     line = run["lines"][0]
-    assert Decimal(line["amount"]) == Decimal("200.00")   # 4h × 50
+    assert Decimal(line["amount"]) == Decimal("200.00")   # 4h × 50（真实费率规则）
 
     # 流水行：金额只读来自 payroll_line（filter=payroll 可查）
     r = await client.get("/ledger/entries?filter=payroll", headers=h)
@@ -77,10 +69,9 @@ async def test_t_pay_02_settle_posts_entry_matching_line(client, world, db_sessi
     assert entry.source_id is not None
 
 
-async def test_t_pay_03_sm_settle_denied(client, world, db_session, monkeypatch):
+async def test_t_pay_03_sm_settle_denied(client, world, db_session):
     """P0 · AC-PAY-03：店长结算 → 403 forbidden_role，零副作用。"""
-    emp, month = await _setup(client, world, db_session)
-    _stub_rate(monkeypatch)
+    _emp, month = await _setup(client, world, db_session)
     r = await client.post(
         "/payroll/settle", json={"month": month},
         headers=bearer(world.sm.token, world.s1_id),
@@ -115,9 +106,8 @@ async def test_t_pay_01_payroll_updates_on_shift_change(client, world, db_sessio
     assert Decimal(r.json()["total_hours"]) == Decimal("6.00")
 
 
-async def test_t_pay_04_no_shifts_nothing_to_settle(client, world, db_session, monkeypatch):
+async def test_t_pay_04_no_shifts_nothing_to_settle(client, world, db_session):
     """AC-PAY-04：无班次 → 422 nothing_to_settle，无分录凭空产生。"""
-    _stub_rate(monkeypatch)
     r = await client.post(
         "/payroll/settle", json={"month": "2099-01"},
         headers=bearer(world.m.token, world.s1_id),
@@ -138,15 +128,15 @@ async def test_t_pay_05b_settle_body_with_amount_rejected(client, world, db_sess
     for extra in ({"amount": "100"}, {"lines": []}, {"hours": "8"}, {"total_amount": "1"}):
         r = await client.post(
             "/payroll/settle", json={"month": "2099-01", **extra},
-            headers=bearer(world.m.token, world.s1_id),
+            headers=bearer(world.sm.token, world.s1_id),
         )
         assert r.status_code == 422, extra
         assert r.json()["detail"] == "client_amount_forbidden", extra
 
 
 async def test_t_pay_rate_rule_missing(client, world, db_session):
-    """[Open O-07]：rate_rule 未拍板（默认 None）→ settle 422 rate_rule_missing。"""
-    _, month = await _setup(client, world, db_session)
+    """[O-07]：员工未设置计薪方式/单价 → settle 422 rate_rule_missing。"""
+    _emp, month = await _setup(client, world, db_session, with_pay=False)
     r = await client.post(
         "/payroll/settle", json={"month": month},
         headers=bearer(world.m.token, world.s1_id),

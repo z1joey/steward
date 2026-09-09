@@ -1,7 +1,7 @@
 /**
  * TF-05 · 并发 / 隔离 e2e（testing.md §3 / AC-CON-02 · AC-ISO-03 · AC-PAY-01）：
  * 双标签页旧 version 保存 → toast「已被别人更新，已刷新」；切店后列表/表单/弹窗清空；
- * 薪资 Tab 无「计算」按钮且改班次后汇总变（应发受 [Open O-07] 限制断言工时）。
+ * 薪资 Tab 无「计算」按钮且改班次后应发金额即时变（[O-07 拍板 2026-09-09] 真实费率）。
  */
 import { expect, test, type Page } from "@playwright/test";
 
@@ -70,15 +70,15 @@ test("切店后列表清空（AC-ISO-03）", async ({ page, request }) => {
   await expect(page.getByText("S1专属分录")).toHaveCount(0);   // 残影清空
 });
 
-test("薪资 Tab：无「计算」按钮；改班次后汇总自动变（AC-PAY-01 · [Open O-07]）", async ({
+test("薪资 Tab：无「计算」按钮；改班次后应发即时变（AC-PAY-01 · O-07）", async ({
   page,
   request,
 }) => {
   const { manager, storeId } = await seedStore(request, "tf05c");
 
-  // 直接造员工 + 本周一段（经 API 种子）
+  // 直接造员工（时薪 50，[O-07] 单价存员工档案）+ 后续经 UI 排班
   const emp = await request.post("/api/employees", {
-    data: { name: "张三", job_type: "long_term" },
+    data: { name: "张三", job_type: "long_term", pay_type: "hourly", unit_price: "50" },
     headers: { Authorization: `Bearer ${manager.token}`, "X-Store-Id": String(storeId) },
   });
   if (!emp.ok()) throw new Error("create employee failed");
@@ -105,8 +105,6 @@ test("薪资 Tab：无「计算」按钮；改班次后汇总自动变（AC-PAY-
 
   await page.getByRole("button", { name: COPY.tabPayroll }).click();
   await expect(page.getByText("张三")).toBeVisible();
-  // 工时 4.00（compute-on-read，随班次即时变化）
-  await expect(page.getByText("4.00").first()).toBeVisible();
-  // 应发：费率未拍板 → 「待费率拍板」占位（[Open O-07]；拍板后此处改断言金额随班次变化）
-  await expect(page.getByText(COPY.ratePending).first()).toBeVisible();
+  // 应发 200.00 = 4h × 时薪 50（真实费率规则，随班次即时变化 AC-PAY-01）
+  await expect(page.getByText("200.00").first()).toBeVisible();
 });

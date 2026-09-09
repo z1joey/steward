@@ -33,6 +33,16 @@ class Employee(Base):
             "(status = 'resigned') = (resigned_on IS NOT NULL)",
             name="ck_employees_resigned_pair",
         ),
+        # [O-07 拍板 2026-09-09] 单价存员工档案：pay_type ∈ hourly/daily，与 unit_price 同空或同设
+        CheckConstraint(
+            "pay_type IN ('hourly','daily')", name="ck_employees_pay_type"
+        ),
+        CheckConstraint(
+            "unit_price IS NULL OR unit_price > 0", name="ck_employees_unit_price"
+        ),
+        CheckConstraint(
+            "(pay_type IS NULL) = (unit_price IS NULL)", name="ck_employees_pay_pair"
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -42,6 +52,8 @@ class Employee(Base):
     contact: Mapped[str] = mapped_column(String(100), default="", nullable=False)
     job_type: Mapped[str] = mapped_column(String(20), nullable=False)
     notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    pay_type: Mapped[str | None] = mapped_column(String(10), nullable=True)  # hourly / daily
+    unit_price: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
     resigned_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

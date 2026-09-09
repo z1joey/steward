@@ -146,6 +146,7 @@ export interface DividendConfirmResponse {
 // —— Phase D · Employees / Shifts / Payroll ——
 
 export type JobType = "long_term" | "summer" | "winter" | "weekend" | "temporary";
+export type PayType = "hourly" | "daily";   // [O-07] 计薪方式
 export type EmployeeStatusType = "active" | "resigned";
 
 export interface EmployeeItem {
@@ -156,6 +157,8 @@ export interface EmployeeItem {
   contact: string;
   job_type: JobType;
   notes: string;
+  pay_type: PayType | null;      // [O-07] 单价存员工档案
+  unit_price: string | null;
   resigned_on: string | null;
   version: number;
 }
@@ -200,8 +203,10 @@ export interface PayrollPreviewRow {
   employee_id: number;
   name: string;
   hours: string;
+  worked_days: number;   // [O-07] 自然日出勤天数
   amount: string | null;
   segments_count: number;
+  pay_type: PayType | null;
 }
 
 export interface PayrollRunView {
