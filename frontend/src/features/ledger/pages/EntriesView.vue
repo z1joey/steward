@@ -249,11 +249,10 @@ function isPostedClaim(row: LedgerRow): boolean {
 .col-source {
   white-space: nowrap;
 }
-.col-amount {
-  text-align: right;
-  white-space: nowrap;
-}
-.col-actions {
+/* .entries th 的 text-align:left(0,1,1) 会盖过单类列名(0,1,0)，
+   列对齐统一用 .entries 前缀(0,2,0)，保证表头与单元格一致 */
+.entries .col-amount,
+.entries .col-actions {
   text-align: right;
   white-space: nowrap;
 }
