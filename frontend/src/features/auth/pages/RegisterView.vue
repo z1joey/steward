@@ -17,12 +17,17 @@ const ctx = useStoreContextStore();
 
 const email = ref("");
 const password = ref("");
+const confirmPassword = ref("");
 const error = ref("");
 const submitting = ref(false);
 
 async function submit(): Promise<void> {
   if (submitting.value) return;
   error.value = "";
+  if (password.value !== confirmPassword.value) {
+    error.value = COPY.passwordMismatch;
+    return;
+  }
   submitting.value = true;
   try {
     await api.post("/auth/register", { email: email.value.trim(), password: password.value });
@@ -66,6 +71,16 @@ async function submit(): Promise<void> {
       <label class="field">
         <span>{{ COPY.password }}</span>
         <input v-model="password" name="password" type="password" required />
+      </label>
+      <label class="field">
+        <span>{{ COPY.confirmPassword }}</span>
+        <input
+          v-model="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          required
+          @input="error = ''"
+        />
       </label>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <button class="primary" type="submit" :disabled="submitting">

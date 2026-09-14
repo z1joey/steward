@@ -13,6 +13,11 @@ test("T-AUTH-01 · 注册 → 自动登录落引导；错误凭证提示（AC-AU
   await page.goto("/register");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
+  await page.fill('input[name="confirmPassword"]', PASSWORD + "-mismatch");
+  await page.getByRole("button", { name: COPY.register, exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText(COPY.passwordMismatch);   // 两次密码不一致拦截
+
+  await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.getByRole("button", { name: COPY.register, exact: true }).click();
   await expect(page).toHaveURL(/\/onboarding$/);   // 注册成功自动登录，无店 → 引导
 
@@ -37,6 +42,7 @@ test("AC-AUTH-01 · 重复邮箱注册拒绝（AC-AUTH-01）", async ({ page, re
   await page.goto("/register");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
+  await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.getByRole("button", { name: COPY.register, exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText("该邮箱已注册");
 });
@@ -64,6 +70,7 @@ test("T-AUTH-03 · 创建门店 → 进流水；单店隐藏选择器（AC-AUTH-
   await page.goto("/register");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
+  await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.getByRole("button", { name: COPY.register, exact: true }).click();
   await expect(page).toHaveURL(/\/onboarding$/);
 

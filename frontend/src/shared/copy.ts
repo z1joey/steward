@@ -124,6 +124,8 @@ export const COPY = {
   register: "注册",
   email: "邮箱",
   password: "密码",
+  confirmPassword: "确认密码",
+  passwordMismatch: "两次输入的密码不一致",
   loginFailed: "邮箱或密码错误",
   logout: "退出登录",
   createStore: "创建门店",
