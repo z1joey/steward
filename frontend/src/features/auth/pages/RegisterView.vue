@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import { api } from "@/app/http";
@@ -7,6 +7,7 @@ import { homePath } from "@/app/router";
 import { useSessionStore } from "@/app/stores/session";
 import { useStoreContextStore } from "@/app/stores/storeContext";
 import { COPY } from "@/shared/copy";
+import PasswordInput from "@/shared/components/PasswordInput.vue";
 
 /**
  * TA-09 · /register：注册成功自动登录 → 路由决策（AC-AUTH-01/02）。
@@ -20,6 +21,11 @@ const password = ref("");
 const confirmPassword = ref("");
 const error = ref("");
 const submitting = ref(false);
+
+// 重新输入确认密码时清除「不一致」提示
+watch(confirmPassword, () => {
+  error.value = "";
+});
 
 async function submit(): Promise<void> {
   if (submitting.value) return;
@@ -70,17 +76,11 @@ async function submit(): Promise<void> {
       </label>
       <label class="field">
         <span>{{ COPY.password }}</span>
-        <input v-model="password" name="password" type="password" required />
+        <PasswordInput v-model="password" name="password" required />
       </label>
       <label class="field">
         <span>{{ COPY.confirmPassword }}</span>
-        <input
-          v-model="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          required
-          @input="error = ''"
-        />
+        <PasswordInput v-model="confirmPassword" name="confirmPassword" required />
       </label>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <button class="primary" type="submit" :disabled="submitting">

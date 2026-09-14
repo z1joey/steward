@@ -7,6 +7,7 @@ import { homePath } from "@/app/router";
 import { useSessionStore } from "@/app/stores/session";
 import { useStoreContextStore } from "@/app/stores/storeContext";
 import { COPY } from "@/shared/copy";
+import PasswordInput from "@/shared/components/PasswordInput.vue";
 import type { LoginResponse } from "@/shared/types";
 
 /**
@@ -65,10 +66,9 @@ async function submit(): Promise<void> {
       </label>
       <label class="field">
         <span>{{ COPY.password }}</span>
-        <input
+        <PasswordInput
           v-model="password"
           name="password"
-          type="password"
           autocomplete="current-password"
           required
         />
