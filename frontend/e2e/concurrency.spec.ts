@@ -22,7 +22,7 @@ test("双标签页旧 version 报销 → 一方成功，另一方 toast + 刷新
 
   const context = await browser.newContext({ locale: "zh-CN" });
   const pageA = await context.newPage();
-  await uiLogin(pageA, manager.phone);
+  await uiLogin(pageA, manager.email);
   // 双标签页共享同一会话（localStorage）：B 直接进入流水页，不重复登录
   const pageB = await context.newPage();
   await pageB.goto("/ledger/entries");
@@ -63,7 +63,7 @@ test("切店后列表清空（AC-ISO-03）", async ({ page, request }) => {
   const second = (await r.json()).id as number;
   void second;
 
-  await uiLogin(page, manager.phone);
+  await uiLogin(page, manager.email);
   await expect(page.getByText("S1专属分录")).toBeVisible();
 
   await page.selectOption('select[aria-label="门店名称"]', { index: 1 });
@@ -85,7 +85,7 @@ test("薪资 Tab：无「计算」按钮；改班次后应发即时变（AC-PAY-
   const empId = (await emp.json()).id as number;
   void empId;
 
-  await uiLogin(page, manager.phone);
+  await uiLogin(page, manager.email);
   await page.goto("/employees?tab=payroll");
 
   // 无任何「计算」按钮（Locked）；无班次 → 预览为空

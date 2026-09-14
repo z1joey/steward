@@ -26,7 +26,7 @@ def bearer(token: str | None = None, store_id: int | None = None) -> dict[str, s
 
 @dataclass
 class Actor:
-    phone: str
+    email: str
     token: str = ""
     user_id: int = 0
 
@@ -40,20 +40,20 @@ class World:
     m2: Actor         # 无店用户（邀请 / 转让对象）
     s1_id: int = 0
     s2_id: int = 0
-    phones_seen: set = field(default_factory=set)
+    emails_seen: set = field(default_factory=set)
 
 
-def unique_phone(prefix: str) -> str:
-    return f"{prefix}{uuid.uuid4().hex[:8]}"
+def unique_email(prefix: str) -> str:
+    return f"{prefix}{uuid.uuid4().hex[:8]}@test.local"
 
 
-async def register_and_login(client: httpx.AsyncClient, phone: str) -> Actor:
-    r = await client.post("/auth/register", json={"phone": phone, "password": PASSWORD})
+async def register_and_login(client: httpx.AsyncClient, email: str) -> Actor:
+    r = await client.post("/auth/register", json={"email": email, "password": PASSWORD})
     assert r.status_code == 201, r.text
-    r = await client.post("/auth/login", json={"phone": phone, "password": PASSWORD})
+    r = await client.post("/auth/login", json={"email": email, "password": PASSWORD})
     assert r.status_code == 200, r.text
     body = r.json()
-    return Actor(phone=phone, token=body["access_token"], user_id=body["user"]["id"])
+    return Actor(email=email, token=body["access_token"], user_id=body["user"]["id"])
 
 
 async def create_store(client: httpx.AsyncClient, actor: Actor, name: str) -> int:
@@ -67,7 +67,7 @@ async def invite_and_accept(
 ) -> None:
     r = await client.post(
         f"/stores/{store_id}/invites",
-        json={"phone": invitee.phone},
+        json={"email": invitee.email},
         headers=bearer(manager_token, store_id),
     )
     assert r.status_code == 201, r.text
@@ -85,10 +85,10 @@ async def invite_and_accept(
 
 async def make_world(client: httpx.AsyncClient) -> World:
     tag = uuid.uuid4().hex[:6]
-    m = await register_and_login(client, unique_phone(f"m-{tag}-"))
-    sm = await register_and_login(client, unique_phone(f"sm-{tag}-"))
-    sm2 = await register_and_login(client, unique_phone(f"sm2-{tag}-"))
-    m2 = await register_and_login(client, unique_phone(f"m2-{tag}-"))
+    m = await register_and_login(client, unique_email(f"m-{tag}-"))
+    sm = await register_and_login(client, unique_email(f"sm-{tag}-"))
+    sm2 = await register_and_login(client, unique_email(f"sm2-{tag}-"))
+    m2 = await register_and_login(client, unique_email(f"m2-{tag}-"))
     s1 = await create_store(client, m, f"S1-{tag}")
     s2 = await create_store(client, m, f"S2-{tag}")
     await invite_and_accept(client, m.token, s1, sm)

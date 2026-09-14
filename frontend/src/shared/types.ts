@@ -10,14 +10,14 @@ export interface StoreItem {
 export interface PendingInviteItem {
   id: number;
   store: { id: number; name: string };
-  inviter_phone: string;
+  inviter_email: string;
   created_at: string;
 }
 
 export interface PendingTransferItem {
   id: number;
   store: { id: number; name: string };
-  from_phone: string;
+  from_email: string;
   created_at: string;
 }
 
@@ -27,22 +27,22 @@ export interface PendingList {
 }
 
 export interface MembersSettings {
-  members: { user: { id: number; phone: string }; role: string; since: string }[];
-  pending_invites: { id: number; user: { id: number; phone: string }; created_at: string }[];
-  pending_transfers: { id: number; user: { id: number; phone: string }; created_at: string }[];
+  members: { user: { id: number; email: string }; role: string; since: string }[];
+  pending_invites: { id: number; user: { id: number; email: string }; created_at: string }[];
+  pending_transfers: { id: number; user: { id: number; email: string }; created_at: string }[];
 }
 
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-  user: { id: number; phone: string };
+  user: { id: number; email: string };
 }
 
 // —— Phase B · Ledger / Claims（与 backend schemas 对齐）——
 
 export interface RequestedBy {
   id: number;
-  phone: string;
+  email: string;
 }
 
 export interface ClaimView {

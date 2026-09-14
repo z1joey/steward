@@ -6,33 +6,33 @@
 
 import pytest
 
-from tests.helpers import PASSWORD, bearer, unique_phone
+from tests.helpers import PASSWORD, bearer, unique_email
 
 pytest.importorskip("httpx")
 
 
 async def _register(client, prefix: str) -> tuple[str, str]:
-    """注册并登录 → (phone, token)。"""
-    phone = unique_phone(prefix)
-    r = await client.post("/auth/register", json={"phone": phone, "password": PASSWORD})
+    """注册并登录 → (email, token)。"""
+    email = unique_email(prefix)
+    r = await client.post("/auth/register", json={"email": email, "password": PASSWORD})
     assert r.status_code == 201
-    r = await client.post("/auth/login", json={"phone": phone, "password": PASSWORD})
+    r = await client.post("/auth/login", json={"email": email, "password": PASSWORD})
     assert r.status_code == 200
-    return phone, r.json()["access_token"]
+    return email, r.json()["access_token"]
 
 
 async def _invoke(client, world, capability: str, token: str):
     """以给定 token 在 S1 上下文调用能力对应路由。"""
     headers = bearer(token, world.s1_id)
     if capability == "invites.create":
-        phone, _ = await _register(client, "inv-")
+        email, _ = await _register(client, "inv-")
         return await client.post(
-            f"/stores/{world.s1_id}/invites", json={"phone": phone}, headers=headers
+            f"/stores/{world.s1_id}/invites", json={"email": email}, headers=headers
         )
     if capability == "transfers.create":
-        phone, _ = await _register(client, "tr-")
+        email, _ = await _register(client, "tr-")
         return await client.post(
-            f"/stores/{world.s1_id}/transfers", json={"phone": phone}, headers=headers
+            f"/stores/{world.s1_id}/transfers", json={"email": email}, headers=headers
         )
     if capability in ("claims.approve", "claims.reject"):
         r = await client.post(

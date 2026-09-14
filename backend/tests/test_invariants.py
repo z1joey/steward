@@ -24,7 +24,7 @@ from app.modules.auth.models import User
 from app.modules.memberships.models import Membership
 from app.modules.invites.models import Invite
 from app.modules.transfers.models import Transfer
-from tests.helpers import bearer, create_store, register_and_login, unique_phone
+from tests.helpers import bearer, create_store, register_and_login, unique_email
 
 
 def _real_app(engine) -> tuple:
@@ -84,8 +84,8 @@ async def test_approve_txn_failure_rolls_back_entry_and_claim(engine, monkeypatc
         transport=httpx.ASGITransport(app=app), base_url="http://t"
     ) as client:
         tag = uuid.uuid4().hex[:8]
-        m = await register_and_login(client, unique_phone(f"m-{tag}-"))
-        sm = await register_and_login(client, unique_phone(f"sm-{tag}-"))
+        m = await register_and_login(client, unique_email(f"m-{tag}-"))
+        sm = await register_and_login(client, unique_email(f"sm-{tag}-"))
         store_id = await create_store(client, m, f"FI-{tag}")
         db = factory()
         try:
@@ -190,8 +190,8 @@ async def test_balance_equals_txn_sum_after_concurrent_approve_and_dividend(engi
         for _ in range(3)
     ]
     tag = uuid.uuid4().hex[:8]
-    m = await register_and_login(clients[0], unique_phone(f"m-{tag}-"))
-    sm = await register_and_login(clients[0], unique_phone(f"sm-{tag}-"))
+    m = await register_and_login(clients[0], unique_email(f"m-{tag}-"))
+    sm = await register_and_login(clients[0], unique_email(f"sm-{tag}-"))
     store_id = await create_store(clients[0], m, f"INV-{tag}")
     try:
         db = factory()

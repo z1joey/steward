@@ -56,7 +56,7 @@ onBeforeUnmount(unregisterRefresh);
         <li v-for="i in pending.invites" :key="`i-${i.id}`" class="row">
           <span class="desc">
             {{ i.store.name }} · {{ COPY.roleStoreManager }} {{ COPY.invitesSection }} ·
-            来自 {{ i.inviter_phone }}
+            来自 {{ i.inviter_email }}
           </span>
           <span class="actions">
             <ConfirmButton :action="() => accept('invite', i.id)">{{ COPY.accept }}</ConfirmButton>
@@ -72,7 +72,7 @@ onBeforeUnmount(unregisterRefresh);
         <li v-for="t in pending.transfers" :key="`t-${t.id}`" class="row">
           <span class="desc">
             {{ t.store.name }} · {{ COPY.roleManager }} {{ COPY.transfersSection }} ·
-            来自 {{ t.from_phone }}
+            来自 {{ t.from_email }}
           </span>
           <span class="actions">
             <ConfirmButton :action="() => accept('transfer', t.id)">

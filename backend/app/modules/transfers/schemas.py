@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class TransferCreateIn(BaseModel):
-    phone: str = Field(min_length=1, max_length=32)
+    email: str = Field(min_length=1, max_length=255)
 
 
 class VersionIn(BaseModel):
@@ -13,7 +13,7 @@ class VersionIn(BaseModel):
 
 class TransferTargetOut(BaseModel):
     id: int
-    phone: str
+    email: str
 
 
 class TransferOut(BaseModel):
