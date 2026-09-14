@@ -19,3 +19,4 @@ playwright-report/
 # Local tool state
 .mimosa/
 .DS_Store
+.zcode/
