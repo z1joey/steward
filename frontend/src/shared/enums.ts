@@ -28,6 +28,7 @@ export const CLAIM_STATUS_LABELS = {
 } as const;
 
 export const SOURCE_TYPE_LABELS = {
+  adjustment: "调整",
   manual: "手工",
   claim: "报销",
   payroll: "工资",

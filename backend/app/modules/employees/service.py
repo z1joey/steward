@@ -48,6 +48,8 @@ def employee_out(db: Session, employee: Employee) -> EmployeeOut:
         contact=employee.contact,
         job_type=employee.job_type,
         notes=employee.notes,
+        pay_type=employee.pay_type,
+        unit_price=employee.unit_price,
         resigned_on=employee.resigned_on,
         version=employee.version,
     )
@@ -81,6 +83,8 @@ def create_employee(
         contact=payload.contact,
         job_type=payload.job_type.value,
         notes=payload.notes,
+        pay_type=payload.pay_type,
+        unit_price=payload.unit_price,
         version=1,
     )
     db.add(employee)
@@ -129,6 +133,10 @@ def update_employee(
         fields["job_type"] = payload.job_type.value
     if payload.notes is not None:
         fields["notes"] = payload.notes
+    if payload.pay_type is not None:
+        # [O-07] 计薪方式/单价成对更新（同设才到得了这里，见 UpdateIn 校验）
+        fields["pay_type"] = payload.pay_type
+        fields["unit_price"] = payload.unit_price
     updated = db.execute(
         update(Employee)
         .where(

@@ -48,10 +48,10 @@ export const useSettingsStore = defineStore("settings", {
         this.loading = false;
       }
     },
-    async invite(phone: string): Promise<void> {
+    async invite(email: string): Promise<void> {
       this.inviteError = "";
       try {
-        await api.post(`/stores/${currentStoreId()}/invites`, { phone });
+        await api.post(`/stores/${currentStoreId()}/invites`, { email });
         await this.refresh();
       } catch (e) {
         const detail = (e as { response?: { data?: { detail?: string } } }).response?.data
@@ -60,23 +60,23 @@ export const useSettingsStore = defineStore("settings", {
           this.inviteError = COPY.alreadyMemberMsg;
         } else if (detail === "pending_exists") {
           this.inviteError = COPY.pendingExistsMsg;
-        } else if (detail === "phone_not_registered") {
-          this.inviteError = "该手机号尚未注册";
+        } else if (detail === "email_not_registered") {
+          this.inviteError = "该邮箱尚未注册";
         } else {
           throw e;
         }
       }
     },
-    async transfer(phone: string): Promise<void> {
+    async transfer(email: string): Promise<void> {
       this.transferError = "";
       try {
-        await api.post(`/stores/${currentStoreId()}/transfers`, { phone });
+        await api.post(`/stores/${currentStoreId()}/transfers`, { email });
         await this.refresh();
       } catch (e) {
         const detail = (e as { response?: { data?: { detail?: string } } }).response?.data
           ?.detail;
-        if (detail === "phone_not_registered") {
-          this.transferError = "该手机号尚未注册";
+        if (detail === "email_not_registered") {
+          this.transferError = "该邮箱尚未注册";
         } else if (detail === "self_transfer") {
           this.transferError = "不能转让给自己";
         } else {

@@ -18,12 +18,12 @@ from app.modules.stores.models import Store
 from app.modules.transfers.models import Transfer
 
 
-def create_invite(db: Session, ctx: StoreContext, phone: str) -> Invite:
+def create_invite(db: Session, ctx: StoreContext, email: str) -> Invite:
     """邀请店长（Locked：不限店长人数；两次校验「对方尚非本店成员」）。"""
-    phone = phone.strip()
-    invitee = db.query(User).filter(User.phone == phone).one_or_none()
+    email = email.strip().lower()
+    invitee = db.query(User).filter(User.email == email).one_or_none()
     if invitee is None:
-        raise NotFound("phone_not_registered")   # 必须已注册（Locked）
+        raise NotFound("email_not_registered")   # 必须已注册（Locked）
     already_member = (
         db.query(Membership)
         .filter(Membership.store_id == ctx.store.id, Membership.user_id == invitee.id)
@@ -61,7 +61,7 @@ def invite_to_out(db: Session, invite: Invite) -> InviteOut:
     return InviteOut(
         id=invite.id,
         store_id=invite.store_id,
-        invitee={"id": invitee.id, "phone": invitee.phone},
+        invitee={"id": invitee.id, "email": invitee.email},
         status=invite.status,
         created_at=invite.created_at,
     )
@@ -147,7 +147,7 @@ def list_pending_for_user(db: Session, user: User) -> PendingListOut:
             PendingInviteItem(
                 id=invite.id,
                 store={"id": store.id, "name": store.name},
-                inviter_phone=inviter.phone,
+                inviter_email=inviter.email,
                 created_at=invite.created_at,
             )
             for invite, store, inviter in invite_rows
@@ -156,7 +156,7 @@ def list_pending_for_user(db: Session, user: User) -> PendingListOut:
             PendingTransferItem(
                 id=transfer.id,
                 store={"id": store.id, "name": store.name},
-                from_phone=sender.phone,
+                from_email=sender.email,
                 created_at=transfer.created_at,
             )
             for transfer, store, sender in transfer_rows

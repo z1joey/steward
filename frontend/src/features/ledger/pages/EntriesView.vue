@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 
 import { registerRefreshHook } from "@/app/http";
 import {
@@ -17,11 +18,13 @@ import type { LedgerRow } from "@/shared/types";
 
 /**
  * TB-07 · 流水页（ui-spec §3.1 / AC-LED-04/06/07）：
- * 记一笔弹窗 · 六类筛选 chips · 待审行（管理者报销/驳回）· 已报销划线 ·
- * 工资行「来自结算」。
+ * 记一笔弹窗 · 筛选 chips（六类 + 调整）· 待审行（管理者报销/驳回）·
+ * 已报销划线 · 工资行「来自结算」；支持 ?filter= 初始筛选
+ * （薪资明细 / 调整记录「查看更多」入口）。
  * TB-08 · 行内溢出菜单「冲正」（管理者）→ 确认弹窗（可选原因）；
  * 成功后原行「已冲正」标签 + 新反向行（AC-LED-08 / US-B6 / [Open O-09]）。
  */
+const route = useRoute();
 const ledger = useLedgerStore();
 const { can } = useRole();
 
@@ -49,6 +52,7 @@ const FILTERS: { value: LedgerFilter; label: string }[] = [
   { value: "payroll", label: SOURCE_TYPE_LABELS.payroll },
   { value: "dividend", label: SOURCE_TYPE_LABELS.dividend },
   { value: "recurring", label: SOURCE_TYPE_LABELS.recurring },
+  { value: "adjustment", label: SOURCE_TYPE_LABELS.adjustment },
 ];
 
 let unregisterRefresh: (() => void) | null = null;
@@ -56,7 +60,13 @@ let unregisterRefresh: (() => void) | null = null;
 onMounted(() => {
   // TB-09：切店 $reset 注册（AC-ISO-03）+ 409 全局钩子 → refresh()（AC-CON-02）
   ensureLedgerResetRegistered();
-  ledger.refresh();
+  // ?filter= 初始筛选（薪资明细 / 调整记录「查看更多」入口）
+  const q = route.query.filter;
+  if (typeof q === "string" && FILTERS.some((f) => f.value === q)) {
+    void ledger.setFilter(q as LedgerFilter);
+  } else {
+    void ledger.refresh();
+  }
   unregisterRefresh = registerRefreshHook(() => void ledger.refresh());
 });
 onBeforeUnmount(() => {
@@ -156,13 +166,19 @@ function isPostedClaim(row: LedgerRow): boolean {
                 <button
                   type="button"
                   class="menu-trigger"
-                  aria-label="更多操作"
+                  :aria-label="COPY.moreActions"
+                  :title="COPY.moreActions"
                   @click="toggleMenu(row)"
                 >
                   ⋯
                 </button>
                 <div v-if="menuFor === row.id" class="menu">
-                  <button type="button" class="menu-item" @click="openReverse(row)">
+                  <button
+                    type="button"
+                    class="menu-item"
+                    :title="COPY.reverseHint"
+                    @click="openReverse(row)"
+                  >
                     {{ COPY.reverse }}
                   </button>
                 </div>
@@ -229,7 +245,8 @@ function isPostedClaim(row: LedgerRow): boolean {
   border-collapse: collapse;
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* 不设 overflow:hidden：行内 ⋯ 下拉菜单（absolute 定位）会被表格边界裁剪；
+     自身背景色本就受 border-radius 约束，无需裁剪子元素 */
 }
 .entries th {
   text-align: left;
@@ -248,11 +265,10 @@ function isPostedClaim(row: LedgerRow): boolean {
 .col-source {
   white-space: nowrap;
 }
-.col-amount {
-  text-align: right;
-  white-space: nowrap;
-}
-.col-actions {
+/* .entries th 的 text-align:left(0,1,1) 会盖过单类列名(0,1,0)，
+   列对齐统一用 .entries 前缀(0,2,0)，保证表头与单元格一致 */
+.entries .col-amount,
+.entries .col-actions {
   text-align: right;
   white-space: nowrap;
 }

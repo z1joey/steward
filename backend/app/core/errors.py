@@ -44,7 +44,7 @@ class BusinessError(AppError):
 
 class Conflict(AppError):
     """可预期唯一性/状态冲突 → 409，机器码由调用方给出
-    （phone_taken / already_member / pending_exists 等）。"""
+    （email_taken / already_member / pending_exists 等）。"""
 
     status_code = 409
     detail = "conflict"
@@ -86,6 +86,6 @@ def register_exception_handlers(app) -> None:
     @app.exception_handler(IntegrityError)
     async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
         # 兜底：partial unique（一店恰 1 管理者）等完整性冲突 → 409（B-specs §0.4）。
-        # 各 service 对可预期冲突（already_member / pending_exists / phone_taken）
+        # 各 service 对可预期冲突（already_member / pending_exists / email_taken）
         # 在此之前自行捕获并映射为更精确的机器码。
         return JSONResponse(status_code=409, content={"detail": "seat_conflict"})

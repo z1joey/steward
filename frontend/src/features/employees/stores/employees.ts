@@ -41,6 +41,8 @@ export const useEmployeesStore = defineStore("employees", {
       contact: string;
       job_type: string;
       notes: string;
+      pay_type?: string | null;
+      unit_price?: string | null;
     }): Promise<void> {
       await api.post("/employees", payload);
       await this.refresh();
@@ -48,7 +50,14 @@ export const useEmployeesStore = defineStore("employees", {
     async saveProfile(
       id: number,
       version: number,
-      fields: { name?: string; contact?: string; job_type?: string; notes?: string },
+      fields: {
+        name?: string;
+        contact?: string;
+        job_type?: string;
+        notes?: string;
+        pay_type?: string | null;
+        unit_price?: string | null;
+      },
     ): Promise<number> {
       const { data } = await api.put<EmployeeItem>(`/employees/${id}`, {
         version,

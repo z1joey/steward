@@ -5,7 +5,7 @@ const USER_KEY = "steward.user";
 
 export interface SessionUser {
   id: number;
-  phone: string;
+  email: string;
 }
 
 /** useSession（B-specs §0.5）：token · user，持久化 localStorage。 */

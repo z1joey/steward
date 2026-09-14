@@ -47,15 +47,15 @@ def list_members(
     )
     return MembersOut(
         members=[
-            MemberOut(user={"id": u.id, "phone": u.phone}, role=m.role, since=m.created_at)
+            MemberOut(user={"id": u.id, "email": u.email}, role=m.role, since=m.created_at)
             for m, u in member_rows
         ],
         pending_invites=[
-            PendingInviteOut(id=i.id, user={"id": u.id, "phone": u.phone}, created_at=i.created_at)
+            PendingInviteOut(id=i.id, user={"id": u.id, "email": u.email}, created_at=i.created_at)
             for i, u in invite_rows
         ],
         pending_transfers=[
-            PendingTransferOut(id=t.id, user={"id": u.id, "phone": u.phone}, created_at=t.created_at)
+            PendingTransferOut(id=t.id, user={"id": u.id, "email": u.email}, created_at=t.created_at)
             for t, u in transfer_rows
         ],
     )

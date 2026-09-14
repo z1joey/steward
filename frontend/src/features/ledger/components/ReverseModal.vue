@@ -39,7 +39,8 @@ function close(): void {
 
 <template>
   <AppModal :open="target != null" :title="COPY.confirmReverse" @close="close">
-    <p v-if="target" class="hint">{{ target.memo || COPY.memo }}</p>
+    <p class="hint">{{ COPY.confirmReverseHint }}</p>
+    <p v-if="target" class="hint target-memo">{{ target.memo || COPY.memo }}</p>
     <label class="field">
       <span>{{ COPY.reverseReason }}</span>
       <input v-model="reason" maxlength="500" @keyup.enter="submit" />
@@ -55,6 +56,10 @@ function close(): void {
   margin: 0;
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+.target-memo {
+  font-weight: 600;
+  color: var(--color-text);
 }
 .field {
   display: grid;

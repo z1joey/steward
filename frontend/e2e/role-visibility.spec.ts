@@ -25,7 +25,7 @@ test("店长会话：所有管理者操作不可见（AC-LED-06 · AC-PAY-03 · 
     memo: "店长报销单",
     needs_reimbursement: true,
   });
-  await uiLogin(page, sm.phone);
+  await uiLogin(page, sm.email);
   await expect(page).toHaveURL(/\/ledger\/entries$/);
   await expect(page.getByText(COPY.pendingReview, { exact: true })).toBeVisible();
 
@@ -56,7 +56,7 @@ test("店长直接访问 /settings/members 被重定向（requiresManager 兜底
 }) => {
   const { manager, storeId } = await seedStore(request, "tf04b");
   const sm = await addStoreManager(request, manager, storeId, "tf04b");
-  await uiLogin(page, sm.phone);
+  await uiLogin(page, sm.email);
 
   await page.goto("/settings/members");
   await expect(page).toHaveURL(/\/ledger\/entries$/);

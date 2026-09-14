@@ -4,7 +4,14 @@ import { api } from "@/app/http";
 import { registerStoreReset } from "@/app/reset";
 import type { LedgerList, LedgerRow } from "@/shared/types";
 
-export type LedgerFilter = "all" | "manual" | "claim" | "payroll" | "dividend" | "recurring";
+export type LedgerFilter =
+  | "all"
+  | "manual"
+  | "claim"
+  | "payroll"
+  | "dividend"
+  | "recurring"
+  | "adjustment";
 
 /**
  * TB-09 · 切店重置注册（resetStoreScopedStores → $reset，清残影 AC-ISO-03）。

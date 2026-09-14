@@ -55,7 +55,7 @@ def claim_view(db: Session, claim: ExpenseClaim) -> ClaimView:
         amount=claim.amount,
         memo=claim.memo,
         status=claim.status,
-        requested_by=RequestedByOut(id=requester.id, phone=requester.phone),
+        requested_by=RequestedByOut(id=requester.id, email=requester.email),
         decided_at=claim.decided_at,
         ledger_entry_id=claim.ledger_entry_id,
         version=claim.version,
@@ -157,7 +157,7 @@ def list_entries(
                 version=c.version,
                 requested_by=RequestedByOut(
                     id=(db.get(User, c.requested_by)).id,
-                    phone=(db.get(User, c.requested_by)).phone,
+                    email=(db.get(User, c.requested_by)).email,
                 ),
             )
             for c in pending

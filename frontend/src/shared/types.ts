@@ -10,14 +10,14 @@ export interface StoreItem {
 export interface PendingInviteItem {
   id: number;
   store: { id: number; name: string };
-  inviter_phone: string;
+  inviter_email: string;
   created_at: string;
 }
 
 export interface PendingTransferItem {
   id: number;
   store: { id: number; name: string };
-  from_phone: string;
+  from_email: string;
   created_at: string;
 }
 
@@ -27,22 +27,22 @@ export interface PendingList {
 }
 
 export interface MembersSettings {
-  members: { user: { id: number; phone: string }; role: string; since: string }[];
-  pending_invites: { id: number; user: { id: number; phone: string }; created_at: string }[];
-  pending_transfers: { id: number; user: { id: number; phone: string }; created_at: string }[];
+  members: { user: { id: number; email: string }; role: string; since: string }[];
+  pending_invites: { id: number; user: { id: number; email: string }; created_at: string }[];
+  pending_transfers: { id: number; user: { id: number; email: string }; created_at: string }[];
 }
 
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-  user: { id: number; phone: string };
+  user: { id: number; email: string };
 }
 
 // —— Phase B · Ledger / Claims（与 backend schemas 对齐）——
 
 export interface RequestedBy {
   id: number;
-  phone: string;
+  email: string;
 }
 
 export interface ClaimView {
@@ -137,6 +137,26 @@ export interface LedgerStats {
   };
 }
 
+export interface BalanceAdjustResponse {
+  balance: string;
+  public_txn: { id: number; balance_after: string | null };
+}
+
+export interface AdjustmentItem {
+  id: number;
+  date: string;
+  direction: "income" | "expense";
+  amount: string;
+  reason: string;
+  balance_after: string;
+  created_at: string;
+}
+
+export interface AdjustmentList {
+  items: AdjustmentItem[];
+  total: number;
+}
+
 export interface DividendConfirmResponse {
   run: { id: number; amount: string; confirmed_at: string };
   entry: LedgerRow;
@@ -146,6 +166,7 @@ export interface DividendConfirmResponse {
 // —— Phase D · Employees / Shifts / Payroll ——
 
 export type JobType = "long_term" | "summer" | "winter" | "weekend" | "temporary";
+export type PayType = "hourly" | "daily";   // [O-07] 计薪方式
 export type EmployeeStatusType = "active" | "resigned";
 
 export interface EmployeeItem {
@@ -156,6 +177,8 @@ export interface EmployeeItem {
   contact: string;
   job_type: JobType;
   notes: string;
+  pay_type: PayType | null;      // [O-07] 单价存员工档案
+  unit_price: string | null;
   resigned_on: string | null;
   version: number;
 }
@@ -200,8 +223,10 @@ export interface PayrollPreviewRow {
   employee_id: number;
   name: string;
   hours: string;
+  worked_days: number;   // [O-07] 自然日出勤天数
   amount: string | null;
   segments_count: number;
+  pay_type: PayType | null;
 }
 
 export interface PayrollRunView {

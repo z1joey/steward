@@ -19,12 +19,12 @@ from app.modules.transfers.models import Transfer
 from app.modules.transfers.schemas import AcceptTransferOut, TransferOut
 
 
-def create_transfer(db: Session, ctx: StoreContext, phone: str) -> TransferOut:
+def create_transfer(db: Session, ctx: StoreContext, email: str) -> TransferOut:
     """发起转让管理者（仅管理者；本店同时只允许一笔待接受）。"""
-    phone = phone.strip()
-    target = db.query(User).filter(User.phone == phone).one_or_none()
+    email = email.strip().lower()
+    target = db.query(User).filter(User.email == email).one_or_none()
     if target is None:
-        raise NotFound("phone_not_registered")   # 必须已注册 [C]
+        raise NotFound("email_not_registered")   # 必须已注册 [C]
     if target.id == ctx.user.id:
         raise BusinessError("self_transfer")      # 422 [C]
     pending = (
@@ -44,7 +44,7 @@ def create_transfer(db: Session, ctx: StoreContext, phone: str) -> TransferOut:
     db.add(transfer)
     db.commit()
     db.refresh(transfer)
-    return TransferOut(id=transfer.id, to={"id": target.id, "phone": target.phone}, status=transfer.status)
+    return TransferOut(id=transfer.id, to={"id": target.id, "email": target.email}, status=transfer.status)
 
 
 def _resolve_one_shot_failure(db: Session, transfer_id: int, user: User) -> None:

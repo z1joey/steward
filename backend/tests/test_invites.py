@@ -3,20 +3,20 @@
 from sqlalchemy.orm import Session
 
 from app.modules.memberships.models import Membership
-from tests.helpers import bearer, invite_and_accept, register_and_login, unique_phone
+from tests.helpers import bearer, invite_and_accept, register_and_login, unique_email
 
 
 async def test_t_inv_01_invite_registered_pending(client, world):
     """AC-INV-01/02：M 邀已注册手机号 → pending；未接受前对方店列表无本店。"""
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["status"] == "pending"
-    assert body["invitee"]["phone"] == world.m2.phone
+    assert body["invitee"]["email"] == world.m2.email
 
     # 未接受前：被邀用户的门店列表不含本店（AC-INV-02）
     r = await client.get("/stores", headers=bearer(world.m2.token))
@@ -28,18 +28,18 @@ async def test_t_inv_01_invite_registered_pending(client, world):
     assert r.status_code == 200
     invites = r.json()["invites"]
     assert any(
-        i["store"]["id"] == world.s1_id and i["inviter_phone"] == world.m.phone
+        i["store"]["id"] == world.s1_id and i["inviter_email"] == world.m.email
         for i in invites
     )
 
-    # 未注册手机号 → 404 phone_not_registered（Locked：必须已注册）
+    # 未注册手机号 → 404 email_not_registered（Locked：必须已注册）
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": "10000000000"},
+        json={"email": "10000000000"},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 404
-    assert r.json()["detail"] == "phone_not_registered"
+    assert r.json()["detail"] == "email_not_registered"
 
 
 async def test_t_inv_02_accept_becomes_store_manager(client, world):
@@ -65,7 +65,7 @@ async def test_t_inv_03_multiple_store_managers_and_rejections(client, world, db
     # 邀请已是本店成员（sm）→ 409 already_member
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.sm.phone},
+        json={"email": world.sm.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 409
@@ -74,13 +74,13 @@ async def test_t_inv_03_multiple_store_managers_and_rejections(client, world, db
     # 同一人重复待接受邀请 → 409 pending_exists
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201, r.text
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 409
@@ -109,7 +109,7 @@ async def test_t_inv_04_store_manager_cannot_invite(client, world):
     """AC-INV-05：店长无邀请入口；API 调用 403 forbidden_role。"""
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.sm.token, world.s1_id),
     )
     assert r.status_code == 403
@@ -120,7 +120,7 @@ async def test_t_inv_reject_flow_then_accept_processed(client, world):
     """拒绝流（TA-06 已实现）：非受邀人 403 · 拒绝 200 rejected · 再接受 409 已处理。"""
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201, r.text
@@ -160,7 +160,7 @@ async def test_t_iso_01_invite_path_store_id_must_match_header(client, world):
     """路径 :store_id 与 X-Store-Id 不一致 → 按跨店资源 404。"""
     r = await client.post(
         f"/stores/{world.s2_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),   # header 指向 S1，路径指向 S2
     )
     assert r.status_code == 404

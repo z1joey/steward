@@ -11,7 +11,7 @@ import { createEntry, seedStore, uiLogin } from "./helpers";
 
 test("记一笔为独立弹窗；提交后关闭并刷新列表（AC-LED-01/02）", async ({ page, request }) => {
   const { manager } = await seedStore(request, "tf03a");
-  await uiLogin(page, manager.phone);
+  await uiLogin(page, manager.email);
 
   await expect(page.locator(".modal")).toHaveCount(0);
   await page.getByRole("button", { name: COPY.recordEntry }).click();
@@ -36,7 +36,7 @@ test("勾报销 → 待审行；管理者报销 → 划线 +「已报销 · 公�
     memo: "打车",
     needs_reimbursement: true,
   });
-  await uiLogin(page, manager.phone);
+  await uiLogin(page, manager.email);
 
   const pending = page.getByText(COPY.pendingReview, { exact: true });
   await expect(pending).toBeVisible();                      // 待审行
@@ -63,7 +63,7 @@ test("六类筛选（AC-LED-07）", async ({ page, request }) => {
     memo: "待审报销单",
     needs_reimbursement: true,
   });
-  await uiLogin(page, manager.phone);
+  await uiLogin(page, manager.email);
 
   const chips = ["全部", "手工", "报销", "工资", "分红", "周期"] as const;
   const chipLabels: Record<(typeof chips)[number], string> = {
@@ -104,7 +104,7 @@ test("冲正入口可达：行内溢出菜单 → 确认弹窗（AC-LED-08）", 
     memo: "可冲正分录",
     needs_reimbursement: false,
   });
-  await uiLogin(page, manager.phone);
+  await uiLogin(page, manager.email);
 
   await page.locator('button[aria-label="更多操作"]').first().click();
   await page.getByRole("button", { name: COPY.reverse }).click();
@@ -115,7 +115,7 @@ test("冲正入口可达：行内溢出菜单 → 确认弹窗（AC-LED-08）", 
 
 test("分红超额：即时红字 + 按钮禁用（AC-DIV-02）", async ({ page, request }) => {
   const { manager } = await seedStore(request, "tf03e");
-  await uiLogin(page, manager.phone);
+  await uiLogin(page, manager.email);
   await page.getByRole("link", { name: COPY.navStats }).click();
   await expect(page).toHaveURL(/\/ledger\/stats$/);
 

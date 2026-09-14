@@ -35,7 +35,7 @@ def create_invite_route(
     if store_id != ctx.store.id:
         # `:id` 与 X-Store-Id 必须一致 [C]；不一致按跨店资源 → 404
         raise NotFound()
-    return invite_to_out(db, create_invite(db, ctx, payload.phone))
+    return invite_to_out(db, create_invite(db, ctx, payload.email))
 
 
 @router.get("/invites", response_model=PendingListOut)

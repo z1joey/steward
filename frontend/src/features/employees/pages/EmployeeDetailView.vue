@@ -6,12 +6,13 @@ import { useDebouncedSave } from "@/shared/components/useDebouncedSave";
 import ConfirmButton from "@/shared/components/ConfirmButton.vue";
 import { COPY } from "@/shared/copy";
 import { EMPLOYEE_STATUS_LABELS, JOB_TYPE_LABELS } from "@/shared/enums";
-import type { EmployeeDetail, JobType } from "@/shared/types";
+import type { EmployeeDetail, JobType, PayType } from "@/shared/types";
 import { fetchEmployeeDetail, useEmployeesStore } from "@/features/employees/stores/employees";
 
 /**
  * TD-07 · 员工详情（AC-EMP-02 / US-E2/E3/E4）：
  * 资料表单防抖自动保存（500ms，PUT 带 version）；
+ * 计薪区（[O-07] 计薪方式 + 单价，同表单自动保存）；
  * 请假区（起止日 + 登记 + 列表）；离职区（生效日 + ConfirmButton；已离职只读）。
  */
 const route = useRoute();
@@ -28,6 +29,9 @@ const name = ref("");
 const contact = ref("");
 const jobType = ref<JobType>("long_term");
 const notes = ref("");
+// [O-07] 计薪："" = 未设置（pay_type/unit_price 双 null）
+const payType = ref<PayType | "">("");
+const unitPrice = ref<string>("");
 
 const leaveStart = ref("");
 const leaveEnd = ref("");
@@ -37,6 +41,14 @@ const resignOn = ref("");
 const resignError = ref("");
 
 const JOB_OPTIONS: JobType[] = ["long_term", "summer", "winter", "weekend", "temporary"];
+const PAY_OPTIONS: { value: PayType | ""; label: string }[] = [
+  { value: "", label: COPY.payTypeNone },
+  { value: "hourly", label: COPY.payTypeHourly },
+  { value: "daily", label: COPY.payTypeDaily },
+];
+
+const unitPriceSuffix = (): string =>
+  payType.value === "daily" ? COPY.unitPerDay : COPY.unitPerHour;
 
 async function load(): Promise<void> {
   try {
@@ -46,6 +58,8 @@ async function load(): Promise<void> {
     contact.value = d.contact;
     jobType.value = d.job_type;
     notes.value = d.notes;
+    payType.value = d.pay_type ?? "";
+    unitPrice.value = d.unit_price ?? "";
     version.value = d.version;
   } catch {
     notFound.value = true;
@@ -63,6 +77,10 @@ async function save(): Promise<void> {
       contact: contact.value.trim(),
       job_type: jobType.value,
       notes: notes.value.trim(),
+      // [O-07] 成对下发：未设置 → 双 null（后端视为「不变更」）；设置 → 双值
+      pay_type: payType.value === "" ? null : payType.value,
+      unit_price:
+        payType.value === "" || unitPrice.value === "" ? null : unitPrice.value,
     });
     saveState.value = "saved";
   } catch {
@@ -146,6 +164,37 @@ function goBack(): void {
         <label class="field">
           <span>{{ COPY.notesLabel }}</span>
           <input v-model="notes" maxlength="500" :disabled="detail.status === 'resigned'" @input="scheduleSave" />
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">{{ COPY.paySection }}</h2>
+      <div class="grid2">
+        <label class="field">
+          <span>{{ COPY.payTypeLabel }}</span>
+          <select v-model="payType" :disabled="detail.status === 'resigned'" @change="scheduleSave">
+            <!-- [O-07] 已设置后不支持清除（后端无清除语义） -->
+            <option
+              v-for="o in PAY_OPTIONS"
+              :key="o.value"
+              :value="o.value"
+              :disabled="o.value === '' && detail.pay_type != null"
+            >
+              {{ o.label }}
+            </option>
+          </select>
+        </label>
+        <label class="field">
+          <span>{{ COPY.unitPrice }}（{{ unitPriceSuffix() }}）</span>
+          <input
+            v-model="unitPrice"
+            type="number"
+            min="0.01"
+            step="0.01"
+            :disabled="detail.status === 'resigned' || payType === ''"
+            @input="scheduleSave"
+          />
         </label>
       </div>
     </section>

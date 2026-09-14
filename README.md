@@ -42,3 +42,8 @@ STEWARDS_DATABASE_URL=postgresql+psycopg://localhost/steward_test uv run pytest
 ## 目录
 
 见 `PROJECT.md` 与 `docs/plan/B-specs.md` §0.1（`frontend/` · `backend/` · `docker-compose.yml`）。
+
+## TODO（已排期未实现的人力支出项）
+
+- **加班费**：单日工时超阈值（8h）部分按倍率（1.5×）计费；`rate_snapshot` 已预留 `overtime` 明细位（`backend/app/modules/payroll/rate_rule.py`）
+- **奖金 / 其他额外人力支出**：`rate_snapshot` 已预留 `bonus` 明细位

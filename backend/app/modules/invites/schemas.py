@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class InviteCreateIn(BaseModel):
-    phone: str = Field(min_length=1, max_length=32)
+    email: str = Field(min_length=1, max_length=255)
 
 
 class VersionIn(BaseModel):
@@ -13,7 +13,7 @@ class VersionIn(BaseModel):
 
 class InviteeOut(BaseModel):
     id: int
-    phone: str
+    email: str
 
 
 class InviteOut(BaseModel):
@@ -43,14 +43,14 @@ class RejectInviteOut(BaseModel):
 class PendingInviteItem(BaseModel):
     id: int
     store: StoreRefOut
-    inviter_phone: str
+    inviter_email: str
     created_at: datetime
 
 
 class PendingTransferItem(BaseModel):
     id: int
     store: StoreRefOut
-    from_phone: str
+    from_email: str
     created_at: datetime
 
 
