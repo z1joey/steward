@@ -1,6 +1,6 @@
 /**
  * e2e 种子助手：经 /api（Vite 代理）调后端造数，与后端 pytest 的 helpers.py 同构。
- * 手机号 uuid 化 → e2e 库可重复运行。
+ * 邮箱 uuid 化 → e2e 库可重复运行。
  */
 import type { APIRequestContext, Page } from "@playwright/test";
 
@@ -11,13 +11,13 @@ import { COPY } from "../src/shared/copy";
 export const PASSWORD = process.env.STEWARDS_TEST_PASSWORD ?? "pw" + "-e2e-1234";
 
 export interface Actor {
-  phone: string;
+  email: string;
   token: string;
   userId: number;
 }
 
-export function uniquePhone(prefix: string): string {
-  return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+export function uniqueEmail(prefix: string): string {
+  return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}@e2e.local`;
 }
 
 async function ensureOk(resp: { status(): number; text(): Promise<string> }, what: string) {
@@ -26,15 +26,15 @@ async function ensureOk(resp: { status(): number; text(): Promise<string> }, wha
   }
 }
 
-export async function registerAndLogin(request: APIRequestContext, phone: string): Promise<Actor> {
+export async function registerAndLogin(request: APIRequestContext, email: string): Promise<Actor> {
   await ensureOk(
-    await request.post("/api/auth/register", { data: { phone, password: PASSWORD } }),
+    await request.post("/api/auth/register", { data: { email, password: PASSWORD } }),
     "register",
   );
-  const login = await request.post("/api/auth/login", { data: { phone, password: PASSWORD } });
+  const login = await request.post("/api/auth/login", { data: { email, password: PASSWORD } });
   await ensureOk(login, "login");
   const body = await login.json();
-  return { phone, token: body.access_token, userId: body.user.id };
+  return { email, token: body.access_token, userId: body.user.id };
 }
 
 export async function createStore(
@@ -54,10 +54,10 @@ export async function createInvite(
   request: APIRequestContext,
   manager: Actor,
   storeId: number,
-  inviteePhone: string,
+  inviteeEmail: string,
 ): Promise<number> {
   const resp = await request.post(`/api/stores/${storeId}/invites`, {
-    data: { phone: inviteePhone },
+    data: { email: inviteeEmail },
     headers: { Authorization: `Bearer ${manager.token}`, "X-Store-Id": String(storeId) },
   });
   await ensureOk(resp, "createInvite");
@@ -82,10 +82,10 @@ export async function createTransfer(
   request: APIRequestContext,
   manager: Actor,
   storeId: number,
-  targetPhone: string,
+  targetEmail: string,
 ): Promise<number> {
   const resp = await request.post(`/api/stores/${storeId}/transfers`, {
-    data: { phone: targetPhone },
+    data: { email: targetEmail },
     headers: { Authorization: `Bearer ${manager.token}`, "X-Store-Id": String(storeId) },
   });
   await ensureOk(resp, "createTransfer");
@@ -98,7 +98,7 @@ export async function seedStore(
   request: APIRequestContext,
   prefix: string,
 ): Promise<{ manager: Actor; storeId: number }> {
-  const manager = await registerAndLogin(request, uniquePhone(`${prefix}-m-`));
+  const manager = await registerAndLogin(request, uniqueEmail(`${prefix}-m-`));
   const storeId = await createStore(request, manager, `S-${prefix}-${Date.now().toString(36)}`);
   return { manager, storeId };
 }
@@ -110,8 +110,8 @@ export async function addStoreManager(
   storeId: number,
   prefix: string,
 ): Promise<Actor> {
-  const sm = await registerAndLogin(request, uniquePhone(`${prefix}-sm-`));
-  const inviteId = await createInvite(request, manager, storeId, sm.phone);
+  const sm = await registerAndLogin(request, uniqueEmail(`${prefix}-sm-`));
+  const inviteId = await createInvite(request, manager, storeId, sm.email);
   await acceptInvite(request, sm, inviteId);
   return sm;
 }
@@ -163,9 +163,9 @@ export async function approveClaim(
 }
 
 /** UI 登录（/login 表单）并等待落点（onboarding 或流水）。 */
-export async function uiLogin(page: Page, phone: string): Promise<void> {
+export async function uiLogin(page: Page, email: string): Promise<void> {
   await page.goto("/login");
-  await page.fill('input[name="phone"]', phone);
+  await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
   await page.getByRole("button", { name: COPY.login, exact: true }).click();
   await page.waitForURL(/\/(onboarding|ledger\/entries)/);

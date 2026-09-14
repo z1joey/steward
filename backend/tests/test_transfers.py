@@ -27,7 +27,7 @@ def _manager_ids(db: Session, store_id: int) -> set[int]:
 async def _create_transfer(client, world, target) -> dict:
     r = await client.post(
         f"/stores/{world.s1_id}/transfers",
-        json={"phone": target.phone},
+        json={"email": target.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201, r.text
@@ -152,7 +152,7 @@ async def test_t_tr_02_only_one_pending_per_store(client, world):
     await _create_transfer(client, world, world.m2)
     r = await client.post(
         f"/stores/{world.s1_id}/transfers",
-        json={"phone": world.sm.phone},
+        json={"email": world.sm.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 409
@@ -163,7 +163,7 @@ async def test_t_tr_self_transfer_rejected(client, world):
     """AC-TR（边界）：管理者转让给自己 → 422 self_transfer。"""
     r = await client.post(
         f"/stores/{world.s1_id}/transfers",
-        json={"phone": world.m.phone},
+        json={"email": world.m.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 422

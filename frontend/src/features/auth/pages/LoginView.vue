@@ -10,14 +10,14 @@ import { COPY } from "@/shared/copy";
 import type { LoginResponse } from "@/shared/types";
 
 /**
- * TA-09 · /login：手机号 + 密码；401 显「手机号或密码错误」。
+ * TA-09 · /login：邮箱 + 密码；401 显「邮箱或密码错误」。
  */
 const router = useRouter();
 const route = useRoute();
 const session = useSessionStore();
 const ctx = useStoreContextStore();
 
-const phone = ref("");
+const email = ref("");
 const password = ref("");
 const error = ref("");
 const submitting = ref(false);
@@ -28,7 +28,7 @@ async function submit(): Promise<void> {
   submitting.value = true;
   try {
     const { data } = await api.post<LoginResponse>("/auth/login", {
-      phone: phone.value.trim(),
+      email: email.value.trim(),
       password: password.value,
     });
     session.setSession(data.access_token, data.user);
@@ -53,8 +53,15 @@ async function submit(): Promise<void> {
     <form class="card" @submit.prevent="submit">
       <h1 class="title">{{ COPY.appName }}</h1>
       <label class="field">
-        <span>{{ COPY.phone }}</span>
-        <input v-model="phone" name="phone" autocomplete="username" required maxlength="32" />
+        <span>{{ COPY.email }}</span>
+        <input
+          v-model="email"
+          name="email"
+          type="email"
+          autocomplete="username"
+          required
+          maxlength="255"
+        />
       </label>
       <label class="field">
         <span>{{ COPY.password }}</span>

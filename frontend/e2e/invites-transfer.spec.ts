@@ -12,15 +12,15 @@ import {
   createStore,
   createTransfer,
   registerAndLogin,
-  uniquePhone,
+  uniqueEmail,
   uiLogin,
 } from "./helpers";
 
 async function seedStoreWithManager(
   request: APIRequestContext,
 ): Promise<{ manager: Actor; storeName: string; storeId: number }> {
-  const manager = await registerAndLogin(request, uniquePhone("e2e-m-"));
-  const storeName = `受让店-${uniquePhone("").slice(-8)}`;
+  const manager = await registerAndLogin(request, uniqueEmail("e2e-m-"));
+  const storeName = `受让店-${uniqueEmail("").slice(-8)}`;
   const storeId = await createStore(request, manager, storeName);
   return { manager, storeName, storeId };
 }
@@ -30,11 +30,11 @@ test("T-INV-01/02 · 待接受邀请出现于引导页，接受后门店生效�
   request,
 }) => {
   const { manager, storeName, storeId } = await seedStoreWithManager(request);
-  const sm = await registerAndLogin(request, uniquePhone("e2e-sm-"));
-  await createInvite(request, manager, storeId, sm.phone);
+  const sm = await registerAndLogin(request, uniqueEmail("e2e-sm-"));
+  await createInvite(request, manager, storeId, sm.email);
 
   // 未接受前：门店列表无本店（AC-INV-02，UI 经引导页落点验证）
-  await uiLogin(page, sm.phone);
+  await uiLogin(page, sm.email);
   await expect(page).toHaveURL(/\/onboarding$/);
   const row = page.locator(".row").filter({ hasText: storeName });
   await expect(row).toContainText(COPY.roleStoreManager);
@@ -49,10 +49,10 @@ test("T-INV-01/02 · 待接受邀请出现于引导页，接受后门店生效�
 
 test("T-INV · 拒绝邀请后列表清空", async ({ page, request }) => {
   const { manager, storeName, storeId } = await seedStoreWithManager(request);
-  const sm = await registerAndLogin(request, uniquePhone("e2e-rj-"));
-  await createInvite(request, manager, storeId, sm.phone);
+  const sm = await registerAndLogin(request, uniqueEmail("e2e-rj-"));
+  await createInvite(request, manager, storeId, sm.email);
 
-  await uiLogin(page, sm.phone);
+  await uiLogin(page, sm.email);
   const row = page.locator(".row").filter({ hasText: storeName });
   await row.getByRole("button", { name: COPY.reject }).click();
   await expect(page.getByText("暂无待处理事项")).toBeVisible();
@@ -64,10 +64,10 @@ test("T-CON-02 · 接受已被处理的事项 → toast「已被别人更新，�
   request,
 }) => {
   const { manager, storeName, storeId } = await seedStoreWithManager(request);
-  const sm = await registerAndLogin(request, uniquePhone("e2e-con-"));
-  const inviteId = await createInvite(request, manager, storeId, sm.phone);
+  const sm = await registerAndLogin(request, uniqueEmail("e2e-con-"));
+  const inviteId = await createInvite(request, manager, storeId, sm.email);
 
-  await uiLogin(page, sm.phone);   // UI 会话停在引导页看到待接受行
+  await uiLogin(page, sm.email);   // UI 会话停在引导页看到待接受行
   const row = page.locator(".row").filter({ hasText: storeName });
   await expect(row).toBeVisible();
 
@@ -82,10 +82,10 @@ test("T-CON-02 · 接受已被处理的事项 → toast「已被别人更新，�
 
 test("T-TR · 接受转让成为管理者，设置入口可见（AC-TR-01）", async ({ page, request }) => {
   const { manager, storeName, storeId } = await seedStoreWithManager(request);
-  const target = await registerAndLogin(request, uniquePhone("e2e-tr-"));
-  await createTransfer(request, manager, storeId, target.phone);
+  const target = await registerAndLogin(request, uniqueEmail("e2e-tr-"));
+  await createTransfer(request, manager, storeId, target.email);
 
-  await uiLogin(page, target.phone);
+  await uiLogin(page, target.email);
   await expect(page).toHaveURL(/\/onboarding$/);
   const row = page.locator(".row").filter({ hasText: storeName });
   await expect(row).toContainText(COPY.roleManager);
@@ -100,11 +100,11 @@ test("T-TR · 接受转让成为管理者，设置入口可见（AC-TR-01）", a
 
 test("AC-INV-05 · 店长无设置/邀请管理入口，直冲被守卫拦截", async ({ page, request }) => {
   const { manager, storeName, storeId } = await seedStoreWithManager(request);
-  const sm = await registerAndLogin(request, uniquePhone("e2e-noentry-"));
-  const inviteId = await createInvite(request, manager, storeId, sm.phone);
+  const sm = await registerAndLogin(request, uniqueEmail("e2e-noentry-"));
+  const inviteId = await createInvite(request, manager, storeId, sm.email);
   await acceptInvite(request, sm, inviteId);   // 经 API 成为店长
 
-  await uiLogin(page, sm.phone);
+  await uiLogin(page, sm.email);
   await expect(page).toHaveURL(/\/ledger\/entries$/);
   await expect(page.locator('a[href="/settings/members"]')).toHaveCount(0);   // 无设置入口
   await expect(page.locator(".invites-link")).toHaveCount(0);                 // 无待处理角标

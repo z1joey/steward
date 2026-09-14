@@ -15,7 +15,7 @@ const router = useRouter();
 const session = useSessionStore();
 const ctx = useStoreContextStore();
 
-const phone = ref("");
+const email = ref("");
 const password = ref("");
 const error = ref("");
 const submitting = ref(false);
@@ -25,10 +25,10 @@ async function submit(): Promise<void> {
   error.value = "";
   submitting.value = true;
   try {
-    await api.post("/auth/register", { phone: phone.value.trim(), password: password.value });
+    await api.post("/auth/register", { email: email.value.trim(), password: password.value });
     // 注册成功自动登录
     const { data } = await api.post("/auth/login", {
-      phone: phone.value.trim(),
+      email: email.value.trim(),
       password: password.value,
     });
     session.setSession(data.access_token, data.user);
@@ -37,9 +37,9 @@ async function submit(): Promise<void> {
   } catch (e) {
     const status = (e as { response?: { status?: number } }).response?.status;
     if (status === 409) {
-      error.value = "该手机号已注册";
+      error.value = "该邮箱已注册";
     } else if (status === 422) {
-      error.value = "请检查手机号与密码（均不能为空）";
+      error.value = "请检查邮箱格式与密码（均不能为空）";
     } else {
       error.value = "注册失败，请稍后再试";
     }
@@ -54,8 +54,14 @@ async function submit(): Promise<void> {
     <form class="card" @submit.prevent="submit">
       <h1 class="title">{{ COPY.appName }} · {{ COPY.register }}</h1>
       <label class="field">
-        <span>{{ COPY.phone }}</span>
-        <input v-model="phone" name="phone" required maxlength="32" />
+        <span>{{ COPY.email }}</span>
+        <input
+          v-model="email"
+          name="email"
+          type="email"
+          required
+          maxlength="255"
+        />
       </label>
       <label class="field">
         <span>{{ COPY.password }}</span>

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class MemberUserOut(BaseModel):
     id: int
-    phone: str
+    email: str
 
 
 class MemberOut(BaseModel):

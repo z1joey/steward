@@ -20,7 +20,7 @@ from app.modules.invites.models import Invite
 from app.modules.memberships.models import Membership
 from app.modules.stores.models import Ledger, PublicAccount, Store
 from app.modules.transfers.models import Transfer
-from tests.helpers import bearer, create_store, register_and_login, unique_phone
+from tests.helpers import bearer, create_store, register_and_login, unique_email
 
 
 def _real_app(engine) -> tuple:
@@ -65,12 +65,12 @@ async def test_t_tr_02_dual_session_concurrent_accept_one_wins(engine):
         httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c2,
     ):
         tag = uuid.uuid4().hex[:8]
-        m = await register_and_login(c1, unique_phone(f"m-{tag}-"))
-        t = await register_and_login(c1, unique_phone(f"t-{tag}-"))
+        m = await register_and_login(c1, unique_email(f"m-{tag}-"))
+        t = await register_and_login(c1, unique_email(f"t-{tag}-"))
         store_id = await create_store(c1, m, f"CONC-{tag}")
         r = await c1.post(
             f"/stores/{store_id}/transfers",
-            json={"phone": t.phone},
+            json={"email": t.email},
             headers=bearer(m.token, store_id),
         )
         assert r.status_code == 201, r.text
@@ -115,7 +115,7 @@ async def test_t_con_01_invite_accept_stale_version(client, world, db_session):
     """AC-CON-01（本分支映射）：旧 version 接受邀请 → 409 version_conflict，零副作用。"""
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201, r.text
@@ -151,7 +151,7 @@ async def test_t_con_01_transfer_accept_stale_version(client, world, db_session)
     """AC-CON-01（本分支映射）：旧 version 接受转让 → 409 version_conflict，席位不变。"""
     r = await client.post(
         f"/stores/{world.s1_id}/transfers",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201, r.text
@@ -221,8 +221,8 @@ async def test_t_con_03_concurrent_approve_exactly_one_entry(engine):
         for _ in range(3)
     ]
     tag = uuid.uuid4().hex[:8]
-    m = await register_and_login(clients[0], unique_phone(f"m-{tag}-"))
-    sm = await register_and_login(clients[0], unique_phone(f"sm-{tag}-"))
+    m = await register_and_login(clients[0], unique_email(f"m-{tag}-"))
+    sm = await register_and_login(clients[0], unique_email(f"sm-{tag}-"))
     store_id = await create_store(clients[0], m, f"CON3-{tag}")
 
     # 直接建店长 membership（省邀请流程；并发测试与席位无关）

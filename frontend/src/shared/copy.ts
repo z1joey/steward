@@ -109,7 +109,7 @@ export const COPY = {
   hoursUnit: "h",
 
   // 设置 · 本店成员（TE-03）
-  memberPhone: "手机号",
+  memberEmail: "邮箱",
   memberRole: "角色",
   memberSince: "加入时间",
   pendingSection: "待接受",
@@ -122,9 +122,9 @@ export const COPY = {
   // 认证 / 引导
   login: "登录",
   register: "注册",
-  phone: "手机号",
+  email: "邮箱",
   password: "密码",
-  loginFailed: "手机号或密码错误",
+  loginFailed: "邮箱或密码错误",
   logout: "退出登录",
   createStore: "创建门店",
   storeName: "门店名称",

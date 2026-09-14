@@ -18,7 +18,7 @@ class EntryCreateIn(BaseModel):
 
 class RequestedByOut(BaseModel):
     id: int
-    phone: str
+    email: str
 
 
 class ClaimView(BaseModel):

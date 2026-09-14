@@ -13,7 +13,7 @@ import { ROLE_LABELS } from "@/shared/enums";
 
 /**
  * TE-03 · /settings/members（US-F1 · AC-INV-01/04 · AC-TR-01~03 / ui-spec §5.2）：
- * 成员表（手机号/角色/加入时间）；待接受区（邀请 · 转让）；
+ * 成员表（邮箱/角色/加入时间）；待接受区（邀请 · 转让）；
  * 「邀请店长」弹窗（始终可用；409 → 页面文案）；
  * 「转让管理者」弹窗 + 二次确认（已有待接受转让时禁用 [C]）。
  */
@@ -101,14 +101,14 @@ function fmtTime(iso: string): string {
     <table class="table">
       <thead>
         <tr>
-          <th>{{ COPY.memberPhone }}</th>
+          <th>{{ COPY.memberEmail }}</th>
           <th>{{ COPY.memberRole }}</th>
           <th>{{ COPY.memberSince }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="m in settings.data?.members ?? []" :key="m.user.id">
-          <td>{{ m.user.phone }}</td>
+          <td>{{ m.user.email }}</td>
           <td>{{ ROLE_LABELS[m.role as keyof typeof ROLE_LABELS] }}</td>
           <td>{{ fmtTime(m.since) }}</td>
         </tr>
@@ -122,7 +122,7 @@ function fmtTime(iso: string): string {
         <div>
           <div class="pending-label">{{ COPY.invitesSection }}</div>
           <div v-for="i in settings.data?.pending_invites ?? []" :key="i.id" class="pending-row">
-            <span>{{ i.user.phone }}</span>
+            <span>{{ i.user.email }}</span>
             <span class="muted">{{ fmtTime(i.created_at) }}</span>
           </div>
           <p v-if="(settings.data?.pending_invites.length ?? 0) === 0" class="muted">无</p>
@@ -130,7 +130,7 @@ function fmtTime(iso: string): string {
         <div>
           <div class="pending-label">{{ COPY.transfersSection }}</div>
           <div v-for="t in settings.data?.pending_transfers ?? []" :key="t.id" class="pending-row">
-            <span>{{ t.user.phone }}</span>
+            <span>{{ t.user.email }}</span>
             <span class="muted">{{ fmtTime(t.created_at) }}</span>
           </div>
           <p v-if="(settings.data?.pending_transfers.length ?? 0) === 0" class="muted">无</p>
@@ -141,7 +141,7 @@ function fmtTime(iso: string): string {
     <!-- 邀请店长弹窗 -->
     <AppModal :open="inviteOpen" :title="COPY.inviteManager" @close="inviteOpen = false">
       <label class="field">
-        <span>{{ COPY.phone }}</span>
+        <span>{{ COPY.email }}</span>
         <input v-model="invitePhone" maxlength="32" @keyup.enter="submitInvite" />
       </label>
       <p v-if="settings.inviteError" class="error">{{ settings.inviteError }}</p>

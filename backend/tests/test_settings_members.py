@@ -16,7 +16,7 @@ async def test_t_iso_01_store_header_without_membership(client, world):
     # 店级写（邀请）→ 403 no_membership
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m2.token, world.s1_id),
     )
     assert r.status_code == 403
@@ -57,13 +57,13 @@ async def test_t_settings_members_lists_everything(client, world):
     # 造一笔 pending 邀请 + 一笔 pending 转让
     r = await client.post(
         f"/stores/{world.s1_id}/invites",
-        json={"phone": world.m2.phone},
+        json={"email": world.m2.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201
     r = await client.post(
         f"/stores/{world.s1_id}/transfers",
-        json={"phone": world.sm.phone},
+        json={"email": world.sm.email},
         headers=bearer(world.m.token, world.s1_id),
     )
     assert r.status_code == 201
@@ -80,6 +80,6 @@ async def test_t_settings_members_lists_everything(client, world):
     assert all(mem["since"] for mem in body["members"])
 
     assert len(body["pending_invites"]) == 1
-    assert body["pending_invites"][0]["user"]["phone"] == world.m2.phone
+    assert body["pending_invites"][0]["user"]["email"] == world.m2.email
     assert len(body["pending_transfers"]) == 1
-    assert body["pending_transfers"][0]["user"]["phone"] == world.sm.phone
+    assert body["pending_transfers"][0]["user"]["email"] == world.sm.email

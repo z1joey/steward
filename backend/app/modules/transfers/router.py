@@ -26,7 +26,7 @@ def create_transfer_route(
 ) -> TransferOut:
     if store_id != ctx.store.id:
         raise NotFound()   # 与 X-Store-Id 不一致 → 跨店 404
-    return create_transfer(db, ctx, payload.phone)
+    return create_transfer(db, ctx, payload.email)
 
 
 @router.post("/transfers/{transfer_id}/accept", response_model=AcceptTransferOut)
